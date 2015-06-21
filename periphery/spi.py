@@ -6,7 +6,7 @@ import ctypes
 class SPIException(IOError):
     pass
 
-class CSpiIocTransfer(ctypes.Structure):
+class _CSpiIocTransfer(ctypes.Structure):
     _fields_ = [
         ('tx_buf', ctypes.c_ulonglong),
         ('rx_buf', ctypes.c_ulonglong),
@@ -22,16 +22,16 @@ class CSpiIocTransfer(ctypes.Structure):
 
 class SPI(object):
     # Constants scraped from <linux/spi/spidev.h>
-    SPI_CPHA        = 0x1
-    SPI_CPOL        = 0x2
-    SPI_LSB_FIRST   = 0x8
-    SPI_IOC_WR_MODE             = 0x40016b01
-    SPI_IOC_RD_MODE             = 0x80016b01
-    SPI_IOC_WR_MAX_SPEED_HZ     = 0x40046b04
-    SPI_IOC_RD_MAX_SPEED_HZ     = 0x80046b04
-    SPI_IOC_WR_BITS_PER_WORD    = 0x40016b03
-    SPI_IOC_RD_BITS_PER_WORD    = 0x80016b03
-    SPI_IOC_MESSAGE_1           = 0x40206b00
+    _SPI_CPHA        = 0x1
+    _SPI_CPOL        = 0x2
+    _SPI_LSB_FIRST   = 0x8
+    _SPI_IOC_WR_MODE            = 0x40016b01
+    _SPI_IOC_RD_MODE            = 0x80016b01
+    _SPI_IOC_WR_MAX_SPEED_HZ    = 0x40046b04
+    _SPI_IOC_RD_MAX_SPEED_HZ    = 0x80046b04
+    _SPI_IOC_WR_BITS_PER_WORD   = 0x40016b03
+    _SPI_IOC_RD_BITS_PER_WORD   = 0x80016b03
+    _SPI_IOC_MESSAGE_1          = 0x40206b00
 
     def __init__(self, devpath, mode, max_speed, bit_order="msb", bits_per_word=8, extra_flags=0):
         self._fd = None
@@ -79,23 +79,23 @@ class SPI(object):
         bit_order = bit_order.lower()
 
         # Set mode, bit order, extra flags
-        buf = array.array("B", [mode | (SPI.SPI_LSB_FIRST if bit_order == "lsb" else 0) | extra_flags])
+        buf = array.array("B", [mode | (SPI._SPI_LSB_FIRST if bit_order == "lsb" else 0) | extra_flags])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_MODE, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
 
         # Set max speed
         buf = array.array("I", [max_speed])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI max speed: " + e.strerror)
 
         # Set bits per word
         buf = array.array("B", [bits_per_word])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_BITS_PER_WORD, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_BITS_PER_WORD, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI bits per word: " + e.strerror)
 
@@ -121,14 +121,14 @@ class SPI(object):
         buf_addr, buf_len = buf.buffer_info()
 
         # Prepare transfer structure
-        spi_xfer = CSpiIocTransfer()
+        spi_xfer = _CSpiIocTransfer()
         spi_xfer.tx_buf = buf_addr
         spi_xfer.rx_buf = buf_addr
         spi_xfer.len = buf_len
 
         # Transfer
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_MESSAGE_1, spi_xfer)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_MESSAGE_1, spi_xfer)
         except OSError as e:
             raise SPIException(e.errno, "SPI transfer: " + e.strerror)
 
@@ -152,18 +152,18 @@ class SPI(object):
 
     # Mutable properties
 
-    def get_mode(self):
+    def _get_mode(self):
         buf = array.array('B', [0])
 
         # Get mode
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
 
         return buf[0] & 0x3
 
-    def set_mode(self, mode):
+    def _set_mode(self, mode):
         if not isinstance(mode, int):
             raise TypeError("Invalid mode type, should be integer.")
         if mode not in [0, 1, 2, 3]:
@@ -174,57 +174,57 @@ class SPI(object):
         # Get mode
         buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
 
-        buf[0] = (buf[0] & ~(SPI.SPI_CPOL | SPI.SPI_CPHA)) | mode
+        buf[0] = (buf[0] & ~(SPI._SPI_CPOL | SPI._SPI_CPHA)) | mode
 
         # Set mode
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_MODE, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
 
-    mode = property(get_mode, set_mode)
+    mode = property(_get_mode, _set_mode)
 
-    def get_max_speed(self):
+    def _get_max_speed(self):
         # Get max speed
         buf = array.array('I', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MAX_SPEED_HZ, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MAX_SPEED_HZ, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI max speed: " + e.strerror)
 
         return buf[0]
 
-    def set_max_speed(self, max_speed):
+    def _set_max_speed(self, max_speed):
         if not isinstance(max_speed, int):
             raise TypeError("Invalid max_speed type, should be integer.")
 
         # Set max speed
         buf = array.array('I', [max_speed])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI max speed: " + e.strerror)
 
-    max_speed = property(get_max_speed, set_max_speed)
+    max_speed = property(_get_max_speed, _set_max_speed)
 
-    def get_bit_order(self):
+    def _get_bit_order(self):
         # Get mode
         buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
 
-        if (buf[0] & SPI.SPI_LSB_FIRST) > 0:
+        if (buf[0] & SPI._SPI_LSB_FIRST) > 0:
             return "lsb"
 
         return "msb"
 
-    def set_bit_order(self, bit_order):
+    def _set_bit_order(self, bit_order):
         if not isinstance(bit_order, str):
             raise TypeError("Invalid bit_order type, should be string.")
         elif bit_order.lower() not in ["msb", "lsb"]:
@@ -235,32 +235,32 @@ class SPI(object):
         # Get mode
         buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
 
         bit_order = bit_order.lower()
-        buf[0] = (buf[0] & ~SPI.SPI_LSB_FIRST) | (SPI.SPI_LSB_FIRST if bit_order == "lsb" else 0)
+        buf[0] = (buf[0] & ~SPI._SPI_LSB_FIRST) | (SPI._SPI_LSB_FIRST if bit_order == "lsb" else 0)
 
         # Set mode
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_MODE, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
 
-    bit_order = property(get_bit_order, set_bit_order)
+    bit_order = property(_get_bit_order, _set_bit_order)
 
-    def get_bits_per_word(self):
+    def _get_bits_per_word(self):
         # Get bits per word
         buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_BITS_PER_WORD, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_BITS_PER_WORD, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI bits per word: " + e.strerror)
 
         return buf[0]
 
-    def set_bits_per_word(self, bits_per_word):
+    def _set_bits_per_word(self, bits_per_word):
         if not isinstance(bits_per_word, int):
             raise TypeError("Invalid bits_per_word type, should be integer.")
         if bits_per_word < 0 or bits_per_word > 255:
@@ -269,23 +269,23 @@ class SPI(object):
         # Set bits per word
         buf = array.array('B', [bits_per_word])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_BITS_PER_WORD, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_BITS_PER_WORD, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI bits per word: " + e.strerror)
 
-    bits_per_word = property(get_bits_per_word, set_bits_per_word)
+    bits_per_word = property(_get_bits_per_word, _set_bits_per_word)
 
-    def get_extra_flags(self):
+    def _get_extra_flags(self):
         # Get mode
         buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
 
-        return buf[0] & ~(SPI.SPI_LSB_FIRST | SPI.SPI_CPHA | SPI.SPI_CPOL)
+        return buf[0] & ~(SPI._SPI_LSB_FIRST | SPI._SPI_CPHA | SPI._SPI_CPOL)
 
-    def set_extra_flags(self, extra_flags):
+    def _set_extra_flags(self, extra_flags):
         if not isinstance(extra_flags, int):
             raise TypeError("Invalid extra_flags type, should be integer.")
 
@@ -294,19 +294,19 @@ class SPI(object):
         # Get mode
         buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
             raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
 
-        buf[0] = (buf[0] & (SPI.SPI_LSB_FIRST | SPI.SPI_CPHA | SPI.SPI_CPOL)) | extra_flags
+        buf[0] = (buf[0] & (SPI._SPI_LSB_FIRST | SPI._SPI_CPHA | SPI._SPI_CPOL)) | extra_flags
 
         # Set mode
         try:
-            fcntl.ioctl(self._fd, SPI.SPI_IOC_WR_MODE, buf, False)
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
 
-    extra_flags = property(get_extra_flags, set_extra_flags)
+    extra_flags = property(_get_extra_flags, _set_extra_flags)
 
     # String representation
 
