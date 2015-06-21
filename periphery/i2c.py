@@ -6,7 +6,7 @@ import fcntl
 class I2CException(IOError):
     pass
 
-class CI2CMessage(ctypes.Structure):
+class _CI2CMessage(ctypes.Structure):
     _fields_ = [
         ("addr", ctypes.c_ushort),
         ("flags", ctypes.c_ushort),
@@ -14,25 +14,25 @@ class CI2CMessage(ctypes.Structure):
         ("buf", ctypes.POINTER(ctypes.c_ubyte)),
     ]
 
-class CI2CIocTransfer(ctypes.Structure):
+class _CI2CIocTransfer(ctypes.Structure):
     _fields_ = [
-        ("msgs", ctypes.POINTER(CI2CMessage)),
+        ("msgs", ctypes.POINTER(_CI2CMessage)),
         ("nmsgs", ctypes.c_uint),
     ]
 
-class I2C:
+class I2C(object):
     # Constants scraped from <linux/i2c-dev.h> and <linux/i2c.h>
-    I2C_IOC_FUNCS       = 0x705
-    I2C_IOC_RDWR        = 0x707
-    I2C_FUNC_I2C        = 0x1
-    I2C_M_TEN           = 0x0010
-    I2C_M_RD            = 0x0001
-    I2C_M_STOP          = 0x8000
-    I2C_M_NOSTART       = 0x4000
-    I2C_M_REV_DIR_ADDR  = 0x2000
-    I2C_M_IGNORE_NAK    = 0x1000
-    I2C_M_NO_RD_ACK     = 0x0800
-    I2C_M_RECV_LEN      = 0x0400
+    _I2C_IOC_FUNCS      = 0x705
+    _I2C_IOC_RDWR       = 0x707
+    _I2C_FUNC_I2C       = 0x1
+    _I2C_M_TEN          = 0x0010
+    _I2C_M_RD           = 0x0001
+    _I2C_M_STOP         = 0x8000
+    _I2C_M_NOSTART      = 0x4000
+    _I2C_M_REV_DIR_ADDR = 0x2000
+    _I2C_M_IGNORE_NAK   = 0x1000
+    _I2C_M_NO_RD_ACK    = 0x0800
+    _I2C_M_RECV_LEN     = 0x0400
 
     class Message:
         def __init__(self, data, read=False, flags=0):
@@ -73,13 +73,13 @@ class I2C:
         # Query supported functions
         buf = array.array('I', [0])
         try:
-            fcntl.ioctl(self._fd, I2C.I2C_IOC_FUNCS, buf, True)
+            fcntl.ioctl(self._fd, I2C._I2C_IOC_FUNCS, buf, True)
         except OSError as e:
             self.close()
             raise I2CException(e.errno, "Querying supported functions: " + e.strerror)
 
         # Check that I2C_RDWR ioctl() is supported on this device
-        if (buf[0] & I2C.I2C_FUNC_I2C) == 0:
+        if (buf[0] & I2C._I2C_FUNC_I2C) == 0:
             self.close()
             raise I2CException(None, "I2C not supported on device %s." % devpath)
 
@@ -102,8 +102,8 @@ class I2C:
         elif len(messages) == 0:
             raise ValueError("Invalid messages data, should be non-zero length.")
 
-        # Convert I2C.Message messages to CI2CMessage messages
-        cmessages = (CI2CMessage * len(messages))()
+        # Convert I2C.Message messages to _CI2CMessage messages
+        cmessages = (_CI2CMessage * len(messages))()
         for i in range(len(messages)):
             # Convert I2C.Message data to bytes
             if isinstance(messages[i].data, bytes):
@@ -114,18 +114,18 @@ class I2C:
                 data = bytes(bytearray(messages[i].data))
 
             cmessages[i].addr = address
-            cmessages[i].flags = messages[i].flags | (I2C.I2C_M_RD if messages[i].read else 0)
+            cmessages[i].flags = messages[i].flags | (I2C._I2C_M_RD if messages[i].read else 0)
             cmessages[i].len = len(data)
             cmessages[i].buf = ctypes.cast(ctypes.create_string_buffer(data, len(data)), ctypes.POINTER(ctypes.c_ubyte))
 
         # Prepare transfer structure
-        i2c_xfer = CI2CIocTransfer()
+        i2c_xfer = _CI2CIocTransfer()
         i2c_xfer.nmsgs = len(cmessages)
         i2c_xfer.msgs = cmessages
 
         # Transfer
         try:
-            fcntl.ioctl(self._fd, I2C.I2C_IOC_RDWR, i2c_xfer, False)
+            fcntl.ioctl(self._fd, I2C._I2C_IOC_RDWR, i2c_xfer, False)
         except IOError as e:
             raise I2CException(e.errno, "I2C transfer: " + e.strerror)
 
