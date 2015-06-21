@@ -150,7 +150,7 @@ class GPIO(object):
 
     # Mutable properties
 
-    def get_direction(self):
+    def _get_direction(self):
         # Read direction
         try:
             f_direction = open("/sys/class/gpio/gpio%d/direction" % self._pin, "r")
@@ -161,7 +161,7 @@ class GPIO(object):
 
         return direction.strip()
 
-    def set_direction(self, direction):
+    def _set_direction(self, direction):
         if not isinstance(direction, str):
             raise TypeError("Invalid direction type, should be string.")
         if direction.lower() not in ["in", "out", "high", "low"]:
@@ -176,9 +176,9 @@ class GPIO(object):
         except IOError as e:
             raise GPIOException(e.errno, "Setting GPIO direction: " + e.strerror)
 
-    direction = property(get_direction, set_direction)
+    direction = property(_get_direction, _set_direction)
 
-    def get_edge(self):
+    def _get_edge(self):
         # Read edge
         try:
             f_edge = open("/sys/class/gpio/gpio%d/edge" % self._pin, "r")
@@ -189,7 +189,7 @@ class GPIO(object):
 
         return edge.strip()
 
-    def set_edge(self, edge):
+    def _set_edge(self, edge):
         if not isinstance(edge, str):
             raise TypeError("Invalid edge type, should be string.")
         if edge.lower() not in ["none", "rising", "falling", "both"]:
@@ -204,7 +204,7 @@ class GPIO(object):
         except IOError as e:
             raise GPIOException(e.errno, "Setting GPIO edge: " + e.strerror)
 
-    edge = property(get_edge, set_edge)
+    edge = property(_get_edge, _set_edge)
 
     # String representation
 
