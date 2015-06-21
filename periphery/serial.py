@@ -8,12 +8,12 @@ class SerialException(IOError):
     pass
 
 class Serial(object):
-    DATABITS_TO_CFLAG = {
+    _DATABITS_TO_CFLAG = {
         5: termios.CS5, 6: termios.CS6, 7: termios.CS7, 8: termios.CS8
     }
-    CFLAG_TO_DATABITS = {v: k for k, v in DATABITS_TO_CFLAG.items()}
+    _CFLAG_TO_DATABITS = {v: k for k, v in _DATABITS_TO_CFLAG.items()}
 
-    BAUDRATE_TO_OSPEED = {
+    _BAUDRATE_TO_OSPEED = {
         50: termios.B50, 75: termios.B75, 110: termios.B110, 134: termios.B134,
         150: termios.B150, 200: termios.B200, 300: termios.B300,
         600: termios.B600, 1200: termios.B1200, 1800: termios.B1800,
@@ -26,7 +26,7 @@ class Serial(object):
         1500000: 0x100A, 2000000: 0x100B, 2500000: 0x100C,
         3000000: 0x100D, 3500000: 0x100E, 4000000: 0x100F,
     }
-    OSPEED_TO_BAUDRATE = {v: k for k, v in BAUDRATE_TO_OSPEED.items()}
+    _OSPEED_TO_BAUDRATE = {v: k for k, v in _BAUDRATE_TO_OSPEED.items()}
 
     def __init__(self, devpath, baudrate, databits=8, parity="none", stopbits=1, xonxoff=False, rtscts=False):
         self._fd = None
@@ -102,7 +102,7 @@ class Serial(object):
         cflag = (termios.CREAD | termios.CLOCAL)
 
         # Setup data bits
-        cflag |= Serial.DATABITS_TO_CFLAG[databits]
+        cflag |= Serial._DATABITS_TO_CFLAG[databits]
 
         # Setup parity
         if parity == "even":
@@ -119,13 +119,13 @@ class Serial(object):
             cflag |= termios.CRTSCTS
 
         # Setup baud rate
-        cflag |= Serial.BAUDRATE_TO_OSPEED[baudrate]
+        cflag |= Serial._BAUDRATE_TO_OSPEED[baudrate]
 
         ### ispeed
-        ispeed = Serial.BAUDRATE_TO_OSPEED[baudrate]
+        ispeed = Serial._BAUDRATE_TO_OSPEED[baudrate]
 
         ### ospeed
-        ospeed = Serial.BAUDRATE_TO_OSPEED[baudrate]
+        ospeed = Serial._BAUDRATE_TO_OSPEED[baudrate]
 
         # Set tty attributes
         try:
@@ -230,23 +230,23 @@ class Serial(object):
 
     # Mutable properties
 
-    def get_baudrate(self):
+    def _get_baudrate(self):
         # Get tty attributes
         try:
             (_, _, _, _, _, ospeed, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
             raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
 
-        if ospeed not in Serial.OSPEED_TO_BAUDRATE:
+        if ospeed not in Serial._OSPEED_TO_BAUDRATE:
             raise SerialException(None, "Unknown baud rate: ospeed 0x%x." % ospeed)
 
-        return Serial.OSPEED_TO_BAUDRATE[ospeed]
+        return Serial._OSPEED_TO_BAUDRATE[ospeed]
 
-    def set_baudrate(self, baudrate):
+    def _set_baudrate(self, baudrate):
         if not isinstance(baudrate, int):
             raise TypeError("Invalid baud rate type, should be integer.")
 
-        if baudrate not in Serial.BAUDRATE_TO_OSPEED:
+        if baudrate not in Serial._BAUDRATE_TO_OSPEED:
             raise ValueError("Unknown baud rate %d." % baudrate)
 
         # Get tty attributes
@@ -257,9 +257,9 @@ class Serial(object):
 
         # Modify tty attributes
         cflag &= ~(termios.CBAUD | termios.CBAUDEX)
-        cflag |= Serial.BAUDRATE_TO_OSPEED[baudrate]
-        ispeed = Serial.BAUDRATE_TO_OSPEED[baudrate]
-        ospeed = Serial.BAUDRATE_TO_OSPEED[baudrate]
+        cflag |= Serial._BAUDRATE_TO_OSPEED[baudrate]
+        ispeed = Serial._BAUDRATE_TO_OSPEED[baudrate]
+        ospeed = Serial._BAUDRATE_TO_OSPEED[baudrate]
 
         # Set tty attributes
         try:
@@ -267,9 +267,9 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    baudrate = property(get_baudrate, set_baudrate)
+    baudrate = property(_get_baudrate, _set_baudrate)
 
-    def get_databits(self):
+    def _get_databits(self):
         # Get tty attributes
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
@@ -278,12 +278,12 @@ class Serial(object):
 
         cs = cflag & termios.CSIZE
 
-        if cs not in Serial.CFLAG_TO_DATABITS:
+        if cs not in Serial._CFLAG_TO_DATABITS:
             raise SerialException(None, "Unknown data bits setting: csize 0x%x." % cs)
 
-        return Serial.CFLAG_TO_DATABITS[cs]
+        return Serial._CFLAG_TO_DATABITS[cs]
 
-    def set_databits(self, databits):
+    def _set_databits(self, databits):
         if not isinstance(databits, int):
             raise TypeError("Invalid data bits type, should be integer.")
         elif databits not in [5, 6, 7, 8]:
@@ -298,7 +298,7 @@ class Serial(object):
 
         # Modify tty attributes
         cflag &= ~termios.CSIZE
-        cflag |= Serial.DATABITS_TO_CFLAG[databits]
+        cflag |= Serial._DATABITS_TO_CFLAG[databits]
 
         # Set tty attributes
         try:
@@ -306,9 +306,9 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    databits = property(get_databits, set_databits)
+    databits = property(_get_databits, _set_databits)
 
-    def get_parity(self):
+    def _get_parity(self):
         # Get tty attributes
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
@@ -322,7 +322,7 @@ class Serial(object):
         else:
             return "odd"
 
-    def set_parity(self, parity):
+    def _set_parity(self, parity):
         if not isinstance(parity, str):
             raise TypeError("Invalid parity type, should be string.")
         elif parity.lower() not in ["none", "even", "odd"]:
@@ -351,9 +351,9 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    parity = property(get_parity, set_parity)
+    parity = property(_get_parity, _set_parity)
 
-    def get_stopbits(self):
+    def _get_stopbits(self):
         # Get tty attributes
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
@@ -365,7 +365,7 @@ class Serial(object):
         else:
             return 1
 
-    def set_stopbits(self, stopbits):
+    def _set_stopbits(self, stopbits):
         if not isinstance(stopbits, int):
             raise TypeError("Invalid stop bits type, should be integer.")
         elif stopbits not in [1, 2]:
@@ -388,9 +388,9 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    stopbits = property(get_stopbits, set_stopbits)
+    stopbits = property(_get_stopbits, _set_stopbits)
 
-    def get_xonxoff(self):
+    def _get_xonxoff(self):
         # Get tty attributes
         try:
             (iflag, _, _, _, _, _, _) = termios.tcgetattr(self._fd)
@@ -402,7 +402,7 @@ class Serial(object):
         else:
             return False
 
-    def set_xonxoff(self, enabled):
+    def _set_xonxoff(self, enabled):
         if not isinstance(enabled, bool):
             raise TypeError("Invalid enabled type, should be boolean.")
 
@@ -423,9 +423,9 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    xonxoff = property(get_xonxoff, set_xonxoff)
+    xonxoff = property(_get_xonxoff, _set_xonxoff)
 
-    def get_rtscts(self):
+    def _get_rtscts(self):
         # Get tty attributes
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
@@ -437,7 +437,7 @@ class Serial(object):
         else:
             return False
 
-    def set_rtscts(self, enabled):
+    def _set_rtscts(self, enabled):
         if not isinstance(enabled, bool):
             raise TypeError("Invalid enabled type, should be boolean.")
 
@@ -458,7 +458,7 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    rtscts = property(get_rtscts, set_rtscts)
+    rtscts = property(_get_rtscts, _set_rtscts)
 
     # String representation
 
