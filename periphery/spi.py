@@ -41,6 +41,12 @@ class SPI(object):
     def __del__(self):
         self.close()
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, t, value, traceback):
+        self.close()
+
     def _open(self, devpath, mode, max_speed, bit_order, bits_per_word, extra_flags):
         if not isinstance(devpath, str):
             raise TypeError("Invalid devpath type, should be string.")

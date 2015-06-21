@@ -55,6 +55,12 @@ class I2C:
     def __del__(self):
         self.close()
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, t, value, traceback):
+        self.close()
+
     def _open(self, devpath):
         # Open i2c device
         try:

@@ -12,7 +12,12 @@ class MMIO(object):
 
     def __del__(self):
         self.close()
-        self.mapping = None
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, t, value, traceback):
+        self.close()
 
     def _open(self, physaddr, size):
         pagesize = os.sysconf(os.sysconf_names['SC_PAGESIZE'])

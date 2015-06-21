@@ -13,6 +13,12 @@ class GPIO(object):
     def __del__(self):
         self.close()
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, t, value, traceback):
+        self.close()
+
     def _open(self, pin, direction):
         if not isinstance(pin, int):
             raise TypeError("Invalid pin type, should be integer.")

@@ -36,6 +36,12 @@ class Serial(object):
     def __del__(self):
         self.close()
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, t, value, traceback):
+        self.close()
+
     def _open(self, devpath, baudrate, databits, parity, stopbits, xonxoff, rtscts):
         if not isinstance(devpath, str):
             raise TypeError("Invalid devpath type, should be string.")
