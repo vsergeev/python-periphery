@@ -55,16 +55,6 @@ class GPIO(object):
 
         self._pin = pin
 
-    def close(self):
-        if self._fd is None:
-            return
-
-        try:
-            os.close(self._fd)
-        except OSError as e:
-            raise GPIOException(e.errno, "Closing GPIO: " + e.strerror)
-
-        self._fd = None
 
     # Methods
 
@@ -133,6 +123,17 @@ class GPIO(object):
             return True
 
         return False
+
+    def close(self):
+        if self._fd is None:
+            return
+
+        try:
+            os.close(self._fd)
+        except OSError as e:
+            raise GPIOException(e.errno, "Closing GPIO: " + e.strerror)
+
+        self._fd = None
 
     # Immutable properties
 

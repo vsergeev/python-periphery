@@ -133,17 +133,6 @@ class Serial(object):
         except termios.error as e:
             raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
 
-    def close(self):
-        if self._fd is None:
-            return
-
-        try:
-            os.close(self._fd)
-        except OSError as e:
-            raise SerialException(e.errno, "Closing serial port: " + e.strerror)
-
-        self._fd = None
-
     # Methods
 
     def read(self, length, timeout=None):
@@ -217,6 +206,17 @@ class Serial(object):
             raise SerialException(e.errno, "Querying output waiting: " + e.strerror)
 
         return buf[0]
+
+    def close(self):
+        if self._fd is None:
+            return
+
+        try:
+            os.close(self._fd)
+        except OSError as e:
+            raise SerialException(e.errno, "Closing serial port: " + e.strerror)
+
+        self._fd = None
 
     # Immutable properties
 

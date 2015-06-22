@@ -42,15 +42,6 @@ class MMIO(object):
         except OSError as e:
             raise MMIOException(e.errno, "Closing /dev/mem: " + e.strerror)
 
-    def close(self):
-        if self.mapping is None:
-            return
-
-        self.mapping.close()
-        self.mapping = None
-
-        self._fd = None
-
     # Methods
 
     def _adjust_offset(self, offset):
@@ -109,6 +100,15 @@ class MMIO(object):
         c_byte_array = (ctypes.c_uint8 * len(data)).from_buffer(self.mapping, offset)
         for i in range(len(data)):
             c_byte_array[i] = data[i]
+
+    def close(self):
+        if self.mapping is None:
+            return
+
+        self.mapping.close()
+        self.mapping = None
+
+        self._fd = None
 
     # Immutable properties
 

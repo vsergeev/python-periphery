@@ -83,17 +83,6 @@ class I2C(object):
             self.close()
             raise I2CException(None, "I2C not supported on device %s." % devpath)
 
-    def close(self):
-        if self._fd is None:
-            return
-
-        try:
-            os.close(self._fd)
-        except OSError as e:
-            raise I2CException(e.errno, "Closing I2C device: " + e.strerror)
-
-        self._fd = None
-
     # Methods
 
     def transfer(self, address, messages):
@@ -140,6 +129,17 @@ class I2C(object):
                     messages[i].data = bytearray(data)
                 elif isinstance(messages[i].data, bytes):
                     messages[i].data = bytes(bytearray(data))
+
+    def close(self):
+        if self._fd is None:
+            return
+
+        try:
+            os.close(self._fd)
+        except OSError as e:
+            raise I2CException(e.errno, "Closing I2C device: " + e.strerror)
+
+        self._fd = None
 
     # Immutable properties
 

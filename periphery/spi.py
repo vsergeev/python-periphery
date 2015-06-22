@@ -99,17 +99,6 @@ class SPI(object):
         except OSError as e:
             raise SPIException(e.errno, "Setting SPI bits per word: " + e.strerror)
 
-    def close(self):
-        if self._fd is None:
-            return
-
-        try:
-            os.close(self._fd)
-        except OSError as e:
-            raise SPIException(e.errno, "Closing SPI device: " + e.strerror)
-
-        self._fd = None
-
     # Methods
 
     def transfer(self, data):
@@ -139,6 +128,17 @@ class SPI(object):
             return bytearray(buf)
         elif isinstance(data, list):
             return buf.tolist()
+
+    def close(self):
+        if self._fd is None:
+            return
+
+        try:
+            os.close(self._fd)
+        except OSError as e:
+            raise SPIException(e.errno, "Closing SPI device: " + e.strerror)
+
+        self._fd = None
 
     # Immutable properties
 
