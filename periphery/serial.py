@@ -58,7 +58,9 @@ class Serial(object):
         elif not isinstance(rtscts, bool):
             raise TypeError("Invalid rtscts type, should be boolean.")
 
-        if databits not in [5, 6, 7, 8]:
+        if baudrate not in Serial._BAUDRATE_TO_OSPEED:
+            raise ValueError("Unknown baud rate %d." % baudrate)
+        elif databits not in [5, 6, 7, 8]:
             raise ValueError("Invalid data bits, can be 5, 6, 7, 8.")
         elif parity.lower() not in ["none", "even", "odd"]:
             raise ValueError("Invalid parity, can be: \"none\", \"even\", \"odd\".")
