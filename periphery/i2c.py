@@ -4,6 +4,7 @@ import array
 import fcntl
 
 class I2CError(IOError):
+    """Base class for I2C errors."""
     pass
 
 class _CI2CMessage(ctypes.Structure):
@@ -35,6 +36,19 @@ class I2C(object):
     _I2C_M_RECV_LEN     = 0x0400
 
     def __init__(self, devpath):
+        """Instantiate an I2C object and open the i2c-dev device at the
+        specified path.
+
+        Args:
+            devpath (str): i2c-dev device path.
+
+        Returns:
+            I2C: I2C object.
+
+        Raises:
+            I2CError: if an I/O or OS error occurs.
+
+        """
         self._fd = None
         self._devpath = None
         self._open(devpath)
@@ -73,6 +87,19 @@ class I2C(object):
     # Methods
 
     def transfer(self, address, messages):
+        """Transfer `messages` to the specified I2C `address`. Modifies the
+        `messages` table with the results of any read transactions.
+
+        Args:
+            address (int): I2C address.
+            messages (list): list of I2C.Message messages.
+
+        Raises:
+            I2CError: if an I/O or OS error occurs.
+            TypeError: if `messages` type is not list.
+            ValueError: if `messages` length is zero, or if message data is not valid bytes.
+
+        """
         if not isinstance(messages, list):
             raise TypeError("Invalid messages type, should be list of I2C.Message.")
         elif len(messages) == 0:
@@ -118,6 +145,12 @@ class I2C(object):
                     messages[i].data = bytes(bytearray(data))
 
     def close(self):
+        """Close the i2c-dev I2C device.
+
+        Raises:
+            I2CError: if an I/O or OS error occurs.
+
+        """
         if self._fd is None:
             return
 
@@ -132,10 +165,18 @@ class I2C(object):
 
     @property
     def fd(self):
+        """Get the file descriptor of the underlying i2c-dev device.
+
+        :type: int
+        """
         return self._fd
 
     @property
     def devpath(self):
+        """Get the device path of the underlying i2c-dev device.
+
+        :type: str
+        """
         return self._devpath
 
     # String representation
@@ -145,6 +186,20 @@ class I2C(object):
 
     class Message:
         def __init__(self, data, read=False, flags=0):
+            """Instantiate an I2C Message object.
+
+            Args:
+                data (bytes, bytearray, list): a byte array or list of 8-bit integers to write.
+                read (bool): specify this as a read transaction, where `data` serves as placeholder bytes for the read.
+                flags (int): additional i2c-dev flags.
+
+            Returns:
+                Message: Message object.
+
+            Raises:
+                TypeError: if `data`, `read`, or `flags` types are invalid.
+
+            """
             if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
                 raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
             if not isinstance(read, bool):
