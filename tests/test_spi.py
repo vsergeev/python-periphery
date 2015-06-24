@@ -46,13 +46,15 @@ def test_open_close():
     spi.mode = 3
     assert spi.mode == 3
 
-    # Try max speeds 100Khz, 500KHz, 1MHz
+    # Try max speeds 100Khz, 500KHz, 1MHz, 2MHz
     spi.max_speed = 100000
     assert spi.max_speed == 100000
     spi.max_speed = 500000
     assert spi.max_speed == 500000
     spi.max_speed = 1000000
     assert spi.max_speed == 1000000
+    spi.max_speed = 2e6
+    assert spi.max_speed == 2000000
 
     spi.close()
 

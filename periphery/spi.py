@@ -52,8 +52,8 @@ class SPI(object):
             raise TypeError("Invalid devpath type, should be string.")
         elif not isinstance(mode, int):
             raise TypeError("Invalid mode type, should be integer.")
-        elif not isinstance(max_speed, int):
-            raise TypeError("Invalid max_speed type, should be integer.")
+        elif not isinstance(max_speed, int) and not isinstance(max_speed, float):
+            raise TypeError("Invalid max_speed type, should be integer or float.")
         elif not isinstance(bit_order, str):
             raise TypeError("Invalid bit_order type, should be string.")
         elif not isinstance(bits_per_word, int):
@@ -86,7 +86,7 @@ class SPI(object):
             raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
         # Set max speed
-        buf = array.array("I", [max_speed])
+        buf = array.array("I", [int(max_speed)])
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
         except OSError as e:
@@ -199,11 +199,11 @@ class SPI(object):
         return buf[0]
 
     def _set_max_speed(self, max_speed):
-        if not isinstance(max_speed, int):
-            raise TypeError("Invalid max_speed type, should be integer.")
+        if not isinstance(max_speed, int) and not isinstance(max_speed, float):
+            raise TypeError("Invalid max_speed type, should be integer or float.")
 
         # Set max speed
-        buf = array.array('I', [max_speed])
+        buf = array.array('I', [int(max_speed)])
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
         except OSError as e:
