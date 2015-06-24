@@ -8,10 +8,26 @@ if sys.version_info[0] >= 3:
     long = int
 
 class MMIOError(IOError):
+    """Base class for MMIO errors."""
     pass
 
 class MMIO(object):
     def __init__(self, physaddr, size):
+        """Instantiate an MMIO object and map the region of physical memory
+        specified by the address base `physaddr` and size `size` in bytes.
+
+        Args:
+            physaddr (int, long): base physical address of memory region.
+            size (int, long): size of memory region.
+
+        Returns:
+            MMIO: MMIO object.
+
+        Raises:
+            MMIOError: if an I/O or OS error occurs.
+            TypeError: if `physaddr` or `size` types are invalid.
+
+        """
         self.mapping = None
         self._open(physaddr, size)
 
@@ -62,6 +78,21 @@ class MMIO(object):
             raise ValueError("Offset out of bounds.")
 
     def read32(self, offset):
+        """Read 32-bits from mapped physical memory, starting at the specified
+        `offset`, in bytes, relative to the base physical address the MMIO
+        object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+
+        Returns:
+            int: 32-bit value read.
+
+        Raises:
+            TypeError: if `offset` type is invalid.
+            ValueError: if `offset` is out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
 
@@ -70,6 +101,21 @@ class MMIO(object):
         return ctypes.c_uint32.from_buffer(self.mapping, offset).value
 
     def read16(self, offset):
+        """Read 16-bits from mapped physical memory, starting at the specified
+        `offset`, in bytes, relative to the base physical address the MMIO
+        object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+
+        Returns:
+            int: 16-bit value read.
+
+        Raises:
+            TypeError: if `offset` type is invalid.
+            ValueError: if `offset` is out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
 
@@ -78,6 +124,21 @@ class MMIO(object):
         return ctypes.c_uint16.from_buffer(self.mapping, offset).value
 
     def read8(self, offset):
+        """Read 8-bits from mapped physical memory, starting at the specified
+        `offset`, in bytes, relative to the base physical address the MMIO
+        object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+
+        Returns:
+            int: 8-bit value read.
+
+        Raises:
+            TypeError: if `offset` type is invalid.
+            ValueError: if `offset` is out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
 
@@ -86,6 +147,22 @@ class MMIO(object):
         return ctypes.c_uint8.from_buffer(self.mapping, offset).value
 
     def read(self, offset, length):
+        """Read an array of bytes from mapped physical memory, starting at the
+        specified `offset` in bytes, relative to the base physical address the
+        MMIO object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+            length (int): number of bytes to read
+
+        Returns:
+            bytes: bytes read.
+
+        Raises:
+            TypeError: if `offset` type is invalid.
+            ValueError: if `offset` is out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
 
@@ -96,6 +173,19 @@ class MMIO(object):
         return bytes(bytearray(c_byte_array))
 
     def write32(self, offset, value):
+        """Write 32-bits to mapped physical memory, starting at the specified
+        `offset`, in bytes, relative to the base physical address the MMIO
+        object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+            value (int): 32-bit value to write
+
+        Raises:
+            TypeError: if `offset` or `value` type are invalid.
+            ValueError: if `offset` or `value` are out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
         if not isinstance(value, int):
@@ -108,6 +198,19 @@ class MMIO(object):
         ctypes.c_uint32.from_buffer(self.mapping, offset).value = value
 
     def write16(self, offset, value):
+        """Write 16-bits to mapped physical memory, starting at the specified
+        `offset`, in bytes, relative to the base physical address the MMIO
+        object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+            value (int): 16-bit value to write
+
+        Raises:
+            TypeError: if `offset` or `value` type are invalid.
+            ValueError: if `offset` or `value` are out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
         if not isinstance(value, int):
@@ -120,6 +223,19 @@ class MMIO(object):
         ctypes.c_uint16.from_buffer(self.mapping, offset).value = value
 
     def write8(self, offset, value):
+        """Write 8-bits to mapped physical memory, starting at the specified
+        `offset`, in bytes, relative to the base physical address the MMIO
+        object was opened with.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+            value (int): 8-bit value to write
+
+        Raises:
+            TypeError: if `offset` or `value` type are invalid.
+            ValueError: if `offset` or `value` are out of bounds.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
         if not isinstance(value, int):
@@ -132,7 +248,19 @@ class MMIO(object):
         ctypes.c_uint8.from_buffer(self.mapping, offset).value = value
 
     def write(self, offset, data):
+        """Write an array of bytes to mapped physical memory, starting at the
+        specified `offset`, in bytes, relative to the base physical address the
+        MMIO object was opened with.
 
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+            data (bytes, bytearray, list): a byte array or list of 8-bit integers to write
+
+        Raises:
+            TypeError: if `offset` or `data` type are invalid.
+            ValueError: if `offset` is out of bounds, or if data is not valid bytes.
+
+        """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
         if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
@@ -148,6 +276,7 @@ class MMIO(object):
             c_byte_array[i] = data[i]
 
     def close(self):
+        """Unmap the MMIO object's mapped physical memory."""
         if self.mapping is None:
             return
 
@@ -160,14 +289,26 @@ class MMIO(object):
 
     @property
     def base(self):
+        """Get the base physical address the MMIO object was opened with.
+
+        :type: int
+        """
         return self._physaddr
 
     @property
     def size(self):
+        """Get the mapping size the MMIO object was opened with.
+
+        :type: int
+        """
         return self._size
 
     @property
     def pointer(self):
+        """Get a ctypes void pointer to the memory mapped region.
+
+        :type: ctypes.c_void_p
+        """
         return ctypes.cast(ctypes.pointer(ctypes.c_uint8.from_buffer(self.mapping, 0)), ctypes.c_void_p)
 
     # String representation
