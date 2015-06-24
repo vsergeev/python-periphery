@@ -67,6 +67,8 @@ class SPI(object):
             raise ValueError("Invalid bit_order, can be \"msb\" or \"lsb\".")
         elif bits_per_word < 0 or bits_per_word > 255:
             raise ValueError("Invalid bits_per_word, must be 0-255.")
+        elif extra_flags < 0 or extra_flags > 255:
+            raise ValueError("Invalid extra_flags, must be 0-255.")
 
         # Open spidev
         try:
@@ -288,6 +290,8 @@ class SPI(object):
     def _set_extra_flags(self, extra_flags):
         if not isinstance(extra_flags, int):
             raise TypeError("Invalid extra_flags type, should be integer.")
+        if extra_flags < 0 or extra_flags > 255:
+            raise ValueError("Invalid extra_flags, must be 0-255.")
 
         # Read-modify-write mode, because the mode contains bits for other settings
 
