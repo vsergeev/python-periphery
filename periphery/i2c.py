@@ -34,19 +34,6 @@ class I2C(object):
     _I2C_M_NO_RD_ACK    = 0x0800
     _I2C_M_RECV_LEN     = 0x0400
 
-    class Message:
-        def __init__(self, data, read=False, flags=0):
-            if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
-                raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
-            if not isinstance(read, bool):
-                raise TypeError("Invalid read type, should be boolean.")
-            if not isinstance(flags, int):
-                raise TypeError("Invalid flags type, should be integer.")
-
-            self.data = data
-            self.read = read
-            self.flags = flags
-
     def __init__(self, devpath):
         self._fd = None
         self._devpath = None
@@ -155,4 +142,17 @@ class I2C(object):
 
     def __str__(self):
         return "I2C (device=%s, fd=%d)" % (self.devpath, self.fd)
+
+    class Message:
+        def __init__(self, data, read=False, flags=0):
+            if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
+                raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
+            if not isinstance(read, bool):
+                raise TypeError("Invalid read type, should be boolean.")
+            if not isinstance(flags, int):
+                raise TypeError("Invalid flags type, should be integer.")
+
+            self.data = data
+            self.read = read
+            self.flags = flags
 
