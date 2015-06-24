@@ -3,7 +3,7 @@ import fcntl
 import array
 import ctypes
 
-class SPIException(IOError):
+class SPIError(IOError):
     pass
 
 class _CSpiIocTransfer(ctypes.Structure):
@@ -72,7 +72,7 @@ class SPI(object):
         try:
             self._fd = os.open(devpath, os.O_RDWR)
         except OSError as e:
-            raise SPIException(e.errno, "Opening SPI device: " + e.strerror)
+            raise SPIError(e.errno, "Opening SPI device: " + e.strerror)
 
         self._devpath = devpath
 
@@ -83,21 +83,21 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
         # Set max speed
         buf = array.array("I", [max_speed])
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI max speed: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI max speed: " + e.strerror)
 
         # Set bits per word
         buf = array.array("B", [bits_per_word])
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_BITS_PER_WORD, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI bits per word: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI bits per word: " + e.strerror)
 
     # Methods
 
@@ -119,7 +119,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_MESSAGE_1, spi_xfer)
         except OSError as e:
-            raise SPIException(e.errno, "SPI transfer: " + e.strerror)
+            raise SPIError(e.errno, "SPI transfer: " + e.strerror)
 
         # Return shifted out data with the same type as shifted in data
         if isinstance(data, bytes):
@@ -136,7 +136,7 @@ class SPI(object):
         try:
             os.close(self._fd)
         except OSError as e:
-            raise SPIException(e.errno, "Closing SPI device: " + e.strerror)
+            raise SPIError(e.errno, "Closing SPI device: " + e.strerror)
 
         self._fd = None
 
@@ -159,7 +159,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
         return buf[0] & 0x3
 
@@ -176,7 +176,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
         buf[0] = (buf[0] & ~(SPI._SPI_CPOL | SPI._SPI_CPHA)) | mode
 
@@ -184,7 +184,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
     mode = property(_get_mode, _set_mode)
 
@@ -194,7 +194,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MAX_SPEED_HZ, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI max speed: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI max speed: " + e.strerror)
 
         return buf[0]
 
@@ -207,7 +207,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MAX_SPEED_HZ, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI max speed: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI max speed: " + e.strerror)
 
     max_speed = property(_get_max_speed, _set_max_speed)
 
@@ -217,7 +217,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
         if (buf[0] & SPI._SPI_LSB_FIRST) > 0:
             return "lsb"
@@ -237,7 +237,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
         bit_order = bit_order.lower()
         buf[0] = (buf[0] & ~SPI._SPI_LSB_FIRST) | (SPI._SPI_LSB_FIRST if bit_order == "lsb" else 0)
@@ -246,7 +246,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
     bit_order = property(_get_bit_order, _set_bit_order)
 
@@ -256,7 +256,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_BITS_PER_WORD, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI bits per word: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI bits per word: " + e.strerror)
 
         return buf[0]
 
@@ -271,7 +271,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_BITS_PER_WORD, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI bits per word: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI bits per word: " + e.strerror)
 
     bits_per_word = property(_get_bits_per_word, _set_bits_per_word)
 
@@ -281,7 +281,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
         return buf[0] & ~(SPI._SPI_LSB_FIRST | SPI._SPI_CPHA | SPI._SPI_CPOL)
 
@@ -296,7 +296,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
         except OSError as e:
-            raise SPIException(e.errno, "Getting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
         buf[0] = (buf[0] & (SPI._SPI_LSB_FIRST | SPI._SPI_CPHA | SPI._SPI_CPOL)) | extra_flags
 
@@ -304,7 +304,7 @@ class SPI(object):
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
         except OSError as e:
-            raise SPIException(e.errno, "Setting SPI mode: " + e.strerror)
+            raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
     extra_flags = property(_get_extra_flags, _set_extra_flags)
 

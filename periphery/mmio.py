@@ -2,7 +2,7 @@ import os
 import mmap
 import ctypes
 
-class MMIOException(IOError):
+class MMIOError(IOError):
     pass
 
 class MMIO(object):
@@ -30,17 +30,17 @@ class MMIO(object):
         try:
             fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
         except OSError as e:
-            raise MMIOException(e.errno, "Opening /dev/mem: " + e.strerror)
+            raise MMIOError(e.errno, "Opening /dev/mem: " + e.strerror)
 
         try:
             self.mapping = mmap.mmap(fd, self._aligned_size, flags=mmap.MAP_SHARED, prot=(mmap.PROT_READ | mmap.PROT_WRITE), offset=self._aligned_physaddr)
         except OSError as e:
-            raise MMIOException(e.errno, "Mapping /dev/mem: " + e.strerror)
+            raise MMIOError(e.errno, "Mapping /dev/mem: " + e.strerror)
 
         try:
             os.close(fd)
         except OSError as e:
-            raise MMIOException(e.errno, "Closing /dev/mem: " + e.strerror)
+            raise MMIOError(e.errno, "Closing /dev/mem: " + e.strerror)
 
     # Methods
 

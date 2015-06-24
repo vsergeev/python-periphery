@@ -4,7 +4,7 @@ import array
 import termios
 import select
 
-class SerialException(IOError):
+class SerialError(IOError):
     pass
 
 class Serial(object):
@@ -69,7 +69,7 @@ class Serial(object):
         try:
             self._fd = os.open(devpath, os.O_RDWR | os.O_NOCTTY)
         except OSError as e:
-            raise SerialException(e.errno, "Opening serial port: " + e.strerror)
+            raise SerialError(e.errno, "Opening serial port: " + e.strerror)
 
         self._devpath = devpath
 
@@ -131,7 +131,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     # Methods
 
@@ -152,7 +152,7 @@ class Serial(object):
             try:
                 data += os.read(self._fd, length-len(data))
             except OSError as e:
-                raise SerialException(e.errno, "Reading serial port: " + e.strerror)
+                raise SerialError(e.errno, "Reading serial port: " + e.strerror)
 
             if len(data) == length:
                 break
@@ -169,7 +169,7 @@ class Serial(object):
         try:
             return os.write(self._fd, data)
         except OSError as e:
-            raise SerialException(e.errno, "Writing serial port: " + e.strerror)
+            raise SerialError(e.errno, "Writing serial port: " + e.strerror)
 
     def poll(self, timeout):
         p = select.poll()
@@ -185,7 +185,7 @@ class Serial(object):
         try:
             termios.tcdrain(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Flushing serial port: " + e.strerror)
+            raise SerialError(e.errno, "Flushing serial port: " + e.strerror)
 
     def input_waiting(self):
         # Get input waiting
@@ -193,7 +193,7 @@ class Serial(object):
         try:
             fcntl.ioctl(self._fd, termios.TIOCINQ, buf, True)
         except OSError as e:
-            raise SerialException(e.errno, "Querying input waiting: " + e.strerror)
+            raise SerialError(e.errno, "Querying input waiting: " + e.strerror)
 
         return buf[0]
 
@@ -203,7 +203,7 @@ class Serial(object):
         try:
             fcntl.ioctl(self._fd, termios.TIOCOUTQ, buf, True)
         except OSError as e:
-            raise SerialException(e.errno, "Querying output waiting: " + e.strerror)
+            raise SerialError(e.errno, "Querying output waiting: " + e.strerror)
 
         return buf[0]
 
@@ -214,7 +214,7 @@ class Serial(object):
         try:
             os.close(self._fd)
         except OSError as e:
-            raise SerialException(e.errno, "Closing serial port: " + e.strerror)
+            raise SerialError(e.errno, "Closing serial port: " + e.strerror)
 
         self._fd = None
 
@@ -235,10 +235,10 @@ class Serial(object):
         try:
             (_, _, _, _, _, ospeed, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         if ospeed not in Serial._OSPEED_TO_BAUDRATE:
-            raise SerialException(None, "Unknown baud rate: ospeed 0x%x." % ospeed)
+            raise SerialError(None, "Unknown baud rate: ospeed 0x%x." % ospeed)
 
         return Serial._OSPEED_TO_BAUDRATE[ospeed]
 
@@ -253,7 +253,7 @@ class Serial(object):
         try:
             (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         # Modify tty attributes
         cflag &= ~(termios.CBAUD | termios.CBAUDEX)
@@ -265,7 +265,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     baudrate = property(_get_baudrate, _set_baudrate)
 
@@ -274,12 +274,12 @@ class Serial(object):
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         cs = cflag & termios.CSIZE
 
         if cs not in Serial._CFLAG_TO_DATABITS:
-            raise SerialException(None, "Unknown data bits setting: csize 0x%x." % cs)
+            raise SerialError(None, "Unknown data bits setting: csize 0x%x." % cs)
 
         return Serial._CFLAG_TO_DATABITS[cs]
 
@@ -294,7 +294,7 @@ class Serial(object):
         try:
             (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         # Modify tty attributes
         cflag &= ~termios.CSIZE
@@ -304,7 +304,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     databits = property(_get_databits, _set_databits)
 
@@ -313,7 +313,7 @@ class Serial(object):
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         if (cflag & termios.PARENB) == 0:
             return "none"
@@ -334,7 +334,7 @@ class Serial(object):
         try:
             (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         # Modify tty attributes
         iflag &= ~(termios.INPCK | termios.ISTRIP)
@@ -349,7 +349,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     parity = property(_get_parity, _set_parity)
 
@@ -358,7 +358,7 @@ class Serial(object):
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         if (cflag & termios.CSTOPB) != 0:
             return 2
@@ -375,7 +375,7 @@ class Serial(object):
         try:
             (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         # Modify tty attributes
         cflag &= ~termios.CSTOPB
@@ -386,7 +386,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     stopbits = property(_get_stopbits, _set_stopbits)
 
@@ -395,7 +395,7 @@ class Serial(object):
         try:
             (iflag, _, _, _, _, _, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         if (iflag & (termios.IXON | termios.IXOFF)) != 0:
             return True
@@ -410,7 +410,7 @@ class Serial(object):
         try:
             (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         # Modify tty attributes
         iflag &= ~(termios.IXON | termios.IXOFF | termios.IXANY)
@@ -421,7 +421,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     xonxoff = property(_get_xonxoff, _set_xonxoff)
 
@@ -430,7 +430,7 @@ class Serial(object):
         try:
             (_, _, cflag, _, _, _, _) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         if (cflag & termios.CRTSCTS) != 0:
             return True
@@ -445,7 +445,7 @@ class Serial(object):
         try:
             (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(self._fd)
         except termios.error as e:
-            raise SerialException(e.errno, "Getting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         # Modify tty attributes
         cflag = ~termios.CRTSCTS
@@ -456,7 +456,7 @@ class Serial(object):
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
-            raise SerialException(e.errno, "Setting serial port attributes: " + e.strerror)
+            raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     rtscts = property(_get_rtscts, _set_rtscts)
 

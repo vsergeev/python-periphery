@@ -26,7 +26,7 @@ def test_open_close():
     print("Starting open/close test...")
 
     # Open non-existent GPIO (export should fail with EINVAL)
-    with AssertRaises(periphery.GPIOException):
+    with AssertRaises(periphery.GPIOError):
         periphery.GPIO(9999, "in")
 
     # Open legitimate GPIO

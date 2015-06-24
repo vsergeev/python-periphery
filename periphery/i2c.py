@@ -3,7 +3,7 @@ import ctypes
 import array
 import fcntl
 
-class I2CException(IOError):
+class I2CError(IOError):
     pass
 
 class _CI2CMessage(ctypes.Structure):
@@ -66,7 +66,7 @@ class I2C(object):
         try:
             self._fd = os.open(devpath, os.O_RDWR)
         except OSError as e:
-            raise I2CException(e.errno, "Opening I2C device: " + e.strerror)
+            raise I2CError(e.errno, "Opening I2C device: " + e.strerror)
 
         self._devpath = devpath
 
@@ -76,12 +76,12 @@ class I2C(object):
             fcntl.ioctl(self._fd, I2C._I2C_IOC_FUNCS, buf, True)
         except OSError as e:
             self.close()
-            raise I2CException(e.errno, "Querying supported functions: " + e.strerror)
+            raise I2CError(e.errno, "Querying supported functions: " + e.strerror)
 
         # Check that I2C_RDWR ioctl() is supported on this device
         if (buf[0] & I2C._I2C_FUNC_I2C) == 0:
             self.close()
-            raise I2CException(None, "I2C not supported on device %s." % devpath)
+            raise I2CError(None, "I2C not supported on device %s." % devpath)
 
     # Methods
 
@@ -116,7 +116,7 @@ class I2C(object):
         try:
             fcntl.ioctl(self._fd, I2C._I2C_IOC_RDWR, i2c_xfer, False)
         except IOError as e:
-            raise I2CException(e.errno, "I2C transfer: " + e.strerror)
+            raise I2CError(e.errno, "I2C transfer: " + e.strerror)
 
         # Update any read I2C.Message messages
         for i in range(len(messages)):
@@ -137,7 +137,7 @@ class I2C(object):
         try:
             os.close(self._fd)
         except OSError as e:
-            raise I2CException(e.errno, "Closing I2C device: " + e.strerror)
+            raise I2CError(e.errno, "Closing I2C device: " + e.strerror)
 
         self._fd = None
 

@@ -22,7 +22,7 @@ def test_open_close():
     print("Starting open/close test...")
 
     # Open non-existent device
-    with AssertRaises(periphery.I2CException):
+    with AssertRaises(periphery.I2CError):
         periphery.I2C("/foo/bar")
 
     # Open legitimate device
@@ -95,7 +95,7 @@ def test_interactive():
     raw_input("Press enter to start transfer...")
 
     # Transfer to non-existent device
-    with AssertRaises(periphery.I2CException):
+    with AssertRaises(periphery.I2CError):
         i2c.transfer(0x7a, messages)
 
     i2c.close()

@@ -15,9 +15,9 @@ def sleep_ms(milliseconds):
 def sleep_us(microseconds):
     time.sleep(microseconds / 1000000.0)
 
-from periphery.gpio import GPIO, GPIOException
-from periphery.spi import SPI, SPIException
-from periphery.i2c import I2C, I2CException
-from periphery.mmio import MMIO, MMIOException
-from periphery.serial import Serial, SerialException
+from periphery.gpio import GPIO, GPIOError
+from periphery.spi import SPI, SPIError
+from periphery.i2c import I2C, I2CError
+from periphery.mmio import MMIO, MMIOError
+from periphery.serial import Serial, SerialError
 

@@ -1,7 +1,7 @@
 import os
 import select
 
-class GPIOException(IOError):
+class GPIOError(IOError):
     pass
 
 class GPIO(object):
@@ -36,7 +36,7 @@ class GPIO(object):
                 f_export.write("%d\n" % pin)
                 f_export.close()
             except IOError as e:
-                raise GPIOException(e.errno, "Exporting GPIO: " + e.strerror)
+                raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
 
         # Write direction
         try:
@@ -45,13 +45,13 @@ class GPIO(object):
             f_direction.write(direction + "\n")
             f_direction.close()
         except IOError as e:
-            raise GPIOException(e.errno, "Setting GPIO direction: " + e.strerror)
+            raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
         # Open value
         try:
             self._fd = os.open("/sys/class/gpio/gpio%d/value" % pin, os.O_RDWR)
         except OSError as e:
-            raise GPIOException(e.errno, "Opening GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Opening GPIO: " + e.strerror)
 
         self._pin = pin
 
@@ -63,20 +63,20 @@ class GPIO(object):
         try:
             buf = os.read(self._fd, 2)
         except OSError as e:
-            raise GPIOException(e.errno, "Reading GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Reading GPIO: " + e.strerror)
 
         # Rewind
         try:
             os.lseek(self._fd, 0, os.SEEK_SET)
         except OSError as e:
-            raise GPIOException(e.errno, "Rewinding GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Rewinding GPIO: " + e.strerror)
 
         if buf[0] == b"0"[0]:
             return False
         elif buf[0] == b"1"[0]:
             return True
 
-        raise GPIOException(None, "Unknown GPIO value: \"%s\"" % buf[0])
+        raise GPIOError(None, "Unknown GPIO value: \"%s\"" % buf[0])
 
     def write(self, value):
         if not isinstance(value, bool):
@@ -89,13 +89,13 @@ class GPIO(object):
             else:
                 os.write(self._fd, b"0\n")
         except OSError as e:
-            raise GPIOException(e.errno, "Writing GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Writing GPIO: " + e.strerror)
 
         # Rewind
         try:
             os.lseek(self._fd, 0, os.SEEK_SET)
         except OSError as e:
-            raise GPIOException(e.errno, "Rewinding GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Rewinding GPIO: " + e.strerror)
 
     def poll(self, timeout_ms):
         if timeout_ms is not None and not isinstance(timeout_ms, int):
@@ -105,7 +105,7 @@ class GPIO(object):
         try:
             os.lseek(self._fd, 0, os.SEEK_END)
         except OSError as e:
-            raise GPIOException(e.errno, "Seeking to end of GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Seeking to end of GPIO: " + e.strerror)
 
         # Poll
         p = select.poll()
@@ -118,7 +118,7 @@ class GPIO(object):
             try:
                 os.lseek(self._fd, 0, os.SEEK_SET)
             except OSError as e:
-                raise GPIOException(e.errno, "Rewinding GPIO: " + e.strerror)
+                raise GPIOError(e.errno, "Rewinding GPIO: " + e.strerror)
 
             return True
 
@@ -131,7 +131,7 @@ class GPIO(object):
         try:
             os.close(self._fd)
         except OSError as e:
-            raise GPIOException(e.errno, "Closing GPIO: " + e.strerror)
+            raise GPIOError(e.errno, "Closing GPIO: " + e.strerror)
 
         self._fd = None
 
@@ -158,7 +158,7 @@ class GPIO(object):
             direction = f_direction.read()
             f_direction.close()
         except IOError as e:
-            raise GPIOException(e.errno, "Getting GPIO direction: " + e.strerror)
+            raise GPIOError(e.errno, "Getting GPIO direction: " + e.strerror)
 
         return direction.strip()
 
@@ -175,7 +175,7 @@ class GPIO(object):
             f_direction.write(direction + "\n")
             f_direction.close()
         except IOError as e:
-            raise GPIOException(e.errno, "Setting GPIO direction: " + e.strerror)
+            raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
     direction = property(_get_direction, _set_direction)
 
@@ -186,7 +186,7 @@ class GPIO(object):
             edge = f_edge.read()
             f_edge.close()
         except IOError as e:
-            raise GPIOException(e.errno, "Getting GPIO edge: " + e.strerror)
+            raise GPIOError(e.errno, "Getting GPIO edge: " + e.strerror)
 
         return edge.strip()
 
@@ -203,7 +203,7 @@ class GPIO(object):
             f_edge.write(edge + "\n")
             f_edge.close()
         except IOError as e:
-            raise GPIOException(e.errno, "Setting GPIO edge: " + e.strerror)
+            raise GPIOError(e.errno, "Setting GPIO edge: " + e.strerror)
 
     edge = property(_get_edge, _set_edge)
 
