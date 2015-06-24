@@ -1,6 +1,11 @@
+import sys
 import os
 import mmap
 import ctypes
+
+# Alias long to int on Python 3
+if sys.version_info[0] >= 3:
+    long = int
 
 class MMIOError(IOError):
     pass
@@ -20,6 +25,11 @@ class MMIO(object):
         self.close()
 
     def _open(self, physaddr, size):
+        if not isinstance(physaddr, int) and not isinstance(physaddr, long):
+            raise TypeError("Invalid physaddr type, should be integer.")
+        if not isinstance(size, int) and not isinstance(size, long):
+            raise TypeError("Invalid size type, should be integer.")
+
         pagesize = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
 
         self._physaddr = physaddr
