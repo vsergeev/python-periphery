@@ -62,21 +62,33 @@ class MMIO(object):
             raise ValueError("Offset out of bounds.")
 
     def read32(self, offset):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
         return ctypes.c_uint32.from_buffer(self.mapping, offset).value
 
     def read16(self, offset):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
         return ctypes.c_uint16.from_buffer(self.mapping, offset).value
 
     def read8(self, offset):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
         return ctypes.c_uint8.from_buffer(self.mapping, offset).value
 
     def read(self, offset, length):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, length)
 
@@ -84,26 +96,50 @@ class MMIO(object):
         return bytes(bytearray(c_byte_array))
 
     def write32(self, offset, value):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+        if not isinstance(value, int):
+            raise TypeError("Invalid value type, should be integer.")
+        if value < 0 or value > 0xffffffff:
+            raise ValueError("Value out of bounds.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
         ctypes.c_uint32.from_buffer(self.mapping, offset).value = value
 
     def write16(self, offset, value):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+        if not isinstance(value, int):
+            raise TypeError("Invalid value type, should be integer.")
+        if value < 0 or value > 0xffff:
+            raise ValueError("Value out of bounds.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
         ctypes.c_uint16.from_buffer(self.mapping, offset).value = value
 
     def write8(self, offset, value):
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
+        if not isinstance(value, int):
+            raise TypeError("Invalid value type, should be integer.")
+        if value < 0 or value > 0xff:
+            raise ValueError("Value out of bounds.")
+
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
         ctypes.c_uint8.from_buffer(self.mapping, offset).value = value
 
     def write(self, offset, data):
-        offset = self._adjust_offset(offset)
-        self._validate_offset(offset, len(data))
 
+        if not isinstance(offset, int) and not isinstance(offset, long):
+            raise TypeError("Invalid offset type, should be integer.")
         if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
             raise TypeError("Invalid data type, expected bytes, bytearray, or list.")
+
+        offset = self._adjust_offset(offset)
+        self._validate_offset(offset, len(data))
 
         data = bytearray(data)
 
