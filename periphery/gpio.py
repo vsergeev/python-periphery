@@ -97,9 +97,9 @@ class GPIO(object):
         except OSError as e:
             raise GPIOError(e.errno, "Rewinding GPIO: " + e.strerror)
 
-    def poll(self, timeout_ms):
-        if timeout_ms is not None and not isinstance(timeout_ms, int):
-            raise TypeError("Invalid timeout_ms type, should be integer or None.")
+    def poll(self, timeout):
+        if timeout is not None and not isinstance(timeout, int) and not isinstance(timeout, float):
+            raise TypeError("Invalid timeout type, should be integer, float, or None.")
 
         # Seek to the end
         try:
@@ -110,7 +110,7 @@ class GPIO(object):
         # Poll
         p = select.poll()
         p.register(self._fd, select.POLLPRI | select.POLLERR)
-        events = p.poll(timeout_ms)
+        events = p.poll(int(timeout*1000))
 
         # If GPIO edge interrupt occurred
         if len(events) > 0:

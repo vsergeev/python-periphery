@@ -101,18 +101,18 @@ def test_loopback():
     print("Check poll faliing 1 -> 0 interrupt")
     gpio_in.edge = "falling"
     gpio_out.write(False)
-    assert gpio_in.poll(1) == True
+    assert gpio_in.poll(0.1) == True
     assert gpio_in.read() == False
 
     # Check poll rising 0 -> 1 interrupt
     print("Check poll faliing 0 -> 1 interrupt")
     gpio_in.edge = "rising"
     gpio_out.write(True)
-    assert gpio_in.poll(1) == True
+    assert gpio_in.poll(0.1) == True
     assert gpio_in.read() == True
 
     # Check poll timeout
-    assert gpio_in.poll(1000) == False
+    assert gpio_in.poll(1) == False
 
     gpio_in.close()
     gpio_out.close()
