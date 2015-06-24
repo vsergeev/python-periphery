@@ -4,6 +4,7 @@ import array
 import ctypes
 
 class SPIError(IOError):
+    """Base class for SPI errors."""
     pass
 
 class _CSpiIocTransfer(ctypes.Structure):
@@ -34,6 +35,27 @@ class SPI(object):
     _SPI_IOC_MESSAGE_1          = 0x40206b00
 
     def __init__(self, devpath, mode, max_speed, bit_order="msb", bits_per_word=8, extra_flags=0):
+        """Instantiate a SPI object and open the spidev device at the specified
+        path with the specified SPI mode, max speed in hertz, and the defaults
+        of "msb" bit order and 8 bits per word.
+
+        Args:
+            devpath (str): spidev device path.
+            mode (int): SPI mode, can be 0, 1, 2, 3.
+            max_speed (int, float): maximum speed in Hertz.
+            bit_order (str): bit order, can be "msb" or "lsb".
+            bits_per_word (int): bits per word.
+            extra_flags (int): extra spidev flags to be bitwise-ORed with the SPI mode.
+
+        Returns:
+            SPI: SPI object.
+
+        Raises:
+            SPIError: if an I/O or OS error occurs.
+            TypeError: if `devpath`, `mode`, `max_speed`, `bit_order`, `bits_per_word`, or `extra_flags` types are invalid.
+            ValueError: if `mode`, `bit_order`, `bits_per_word`, or `extra_flags` values are invalid.
+
+        """
         self._fd = None
         self._devpath = None
         self._open(devpath, mode, max_speed, bit_order, bits_per_word, extra_flags)
@@ -104,6 +126,20 @@ class SPI(object):
     # Methods
 
     def transfer(self, data):
+        """Shift out `data` and return shifted in data.
+
+        Args:
+            data (bytes, bytearray, list): a byte array or list of 8-bit integers to shift out.
+
+        Returns:
+            bytes, bytearray, list: data shifted in.
+
+        Raises:
+            SPIError: if an I/O or OS error occurs.
+            TypeError: if `data` type is invalid.
+            ValueError: if data is not valid bytes.
+
+        """
         if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
             raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
 
@@ -136,6 +172,12 @@ class SPI(object):
             return buf.tolist()
 
     def close(self):
+        """Close the spidev SPI device.
+
+        Raises:
+            SPIError: if an I/O or OS error occurs.
+
+        """
         if self._fd is None:
             return
 
@@ -150,10 +192,18 @@ class SPI(object):
 
     @property
     def fd(self):
+        """Get the file descriptor of the underlying spidev device.
+
+        :type: int
+        """
         return self._fd
 
     @property
     def devpath(self):
+        """Get the device path of the underlying spidev device.
+
+        :type: str
+        """
         return self._devpath
 
     # Mutable properties
@@ -193,6 +243,15 @@ class SPI(object):
             raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
     mode = property(_get_mode, _set_mode)
+    """Get or set the SPI mode. Can be 0, 1, 2, 3.
+
+    Raises:
+        SPIError: if an I/O or OS error occurs.
+        TypeError: if `mode` type is not int.
+        ValueError: if `mode` value is invalid.
+
+    :type: int
+    """
 
     def _get_max_speed(self):
         # Get max speed
@@ -216,6 +275,14 @@ class SPI(object):
             raise SPIError(e.errno, "Setting SPI max speed: " + e.strerror)
 
     max_speed = property(_get_max_speed, _set_max_speed)
+    """Get or set the maximum speed in Hertz.
+
+    Raises:
+        SPIError: if an I/O or OS error occurs.
+        TypeError: if `max_speed` type is not int or float.
+
+    :type: int, float
+    """
 
     def _get_bit_order(self):
         # Get mode
@@ -255,6 +322,15 @@ class SPI(object):
             raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
     bit_order = property(_get_bit_order, _set_bit_order)
+    """Get or set the SPI bit order. Can be "msb" or "lsb".
+
+    Raises:
+        SPIError: if an I/O or OS error occurs.
+        TypeError: if `bit_order` type is not str.
+        ValueError: if `bit_order` value is invalid.
+
+    :type: str
+    """
 
     def _get_bits_per_word(self):
         # Get bits per word
@@ -280,6 +356,15 @@ class SPI(object):
             raise SPIError(e.errno, "Setting SPI bits per word: " + e.strerror)
 
     bits_per_word = property(_get_bits_per_word, _set_bits_per_word)
+    """Get or set the SPI bits per word.
+
+    Raises:
+        SPIError: if an I/O or OS error occurs.
+        TypeError: if `bits_per_word` type is not int.
+        ValueError: if `bits_per_word` value is invalid.
+
+    :type: int
+    """
 
     def _get_extra_flags(self):
         # Get mode
@@ -315,6 +400,15 @@ class SPI(object):
             raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
     extra_flags = property(_get_extra_flags, _set_extra_flags)
+    """Get or set the spidev extra flags. Extra flags are bitwise-ORed with the SPI mode.
+
+    Raises:
+        SPIError: if an I/O or OS error occurs.
+        TypeError: if `extra_flags` type is not int.
+        ValueError: if `extra_flags` value is invalid.
+
+    :type: int
+    """
 
     # String representation
 
