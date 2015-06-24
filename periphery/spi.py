@@ -108,7 +108,11 @@ class SPI(object):
             raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
 
         # Create mutable array
-        buf = array.array('B', data)
+        try:
+            buf = array.array('B', data)
+        except OverflowError:
+            raise ValueError("Invalid data bytes.")
+
         buf_addr, buf_len = buf.buffer_info()
 
         # Prepare transfer structure
