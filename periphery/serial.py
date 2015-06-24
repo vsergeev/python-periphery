@@ -5,6 +5,7 @@ import termios
 import select
 
 class SerialError(IOError):
+    """Base class for Serial errors."""
     pass
 
 class Serial(object):
@@ -29,6 +30,29 @@ class Serial(object):
     _OSPEED_TO_BAUDRATE = {v: k for k, v in _BAUDRATE_TO_OSPEED.items()}
 
     def __init__(self, devpath, baudrate, databits=8, parity="none", stopbits=1, xonxoff=False, rtscts=False):
+        """Instantiate a Serial object and open the tty device at the specified
+        path with the specified baudrate, and the defaults of 8 data bits, no
+        parity, 1 stop bit, no software flow control (xonxoff), and no hardware
+        flow control (rtscts).
+
+        Args:
+            devpath (str): tty device path.
+            baudrate (int): baudrate.
+            databits (int): data bits, can be 5, 6, 7, 8.
+            parity (str): parity, can be "none", "even", "odd".
+            stopbits (int): stop bits, can be 1 or 2.
+            xonxoff (bool): software flow control.
+            rtscts (bool): hardware flow control.
+
+        Returns:
+            Serial: Serial object.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+            TypeError: if `devpath`, `baudrate`, `databits`, `parity`, `stopbits`, `xonxoff`, or `rtscts` types are invalid.
+            ValueError: if `baudrate`, `databits`, `parity`, or `stopbits` values are invalid.
+
+        """
         self._fd = None
         self._devpath = None
         self._open(devpath, baudrate, databits, parity, stopbits, xonxoff, rtscts)
@@ -138,6 +162,27 @@ class Serial(object):
     # Methods
 
     def read(self, length, timeout=None):
+        """Read up to `length` number of bytes from the serial port with an
+        optional timeout.
+
+        `timeout` can be positive for a timeout in seconds, 0 for a
+        non-blocking read, or negative or None for a blocking read that will
+        block until `length` number of bytes are read.
+
+        For a non-blocking or timeout bound read, read() may return data whose
+        length is less than or equal to the requested length.
+
+        Args:
+            length (int): length in bytes.
+            timeout (int, float, None): timeout duration in seconds.
+
+        Returns:
+            bytes: data read.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+
+        """
         data = b""
 
         # Read length bytes if timeout is None
@@ -162,6 +207,21 @@ class Serial(object):
         return data
 
     def write(self, data):
+        """Write `data` to the serial port and return the number of bytes
+        written.
+
+        Args:
+            data (bytes, bytearray, list): a byte array or list of 8-bit integers to write.
+
+        Returns:
+            int: number of bytes written.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+            TypeError: if `data` type is invalid.
+            ValueError: if data is not valid bytes.
+
+        """
         if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
             raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
 
@@ -174,6 +234,18 @@ class Serial(object):
             raise SerialError(e.errno, "Writing serial port: " + e.strerror)
 
     def poll(self, timeout):
+        """Poll for data available for reading from the serial port.
+
+        `timeout` can be positive for a timeout in seconds, 0 for a
+        non-blocking poll, or negative or None for a blocking poll.
+
+        Args:
+            timeout (int, float, None): timeout duration in seconds.
+
+        Returns:
+            bool: ``True`` if data is available for reading from the serial port, ``False`` if not.
+
+        """
         p = select.poll()
         p.register(self._fd, select.POLLIN | select.POLLPRI)
         events = p.poll(int(timeout*1000))
@@ -184,12 +256,28 @@ class Serial(object):
         return False
 
     def flush(self):
+        """Flush the write buffer of the serial port, blocking until all bytes
+        are written.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+
+        """
         try:
             termios.tcdrain(self._fd)
         except termios.error as e:
             raise SerialError(e.errno, "Flushing serial port: " + e.strerror)
 
     def input_waiting(self):
+        """Query the number of bytes waiting to be read from the serial port.
+
+        Returns:
+            int: number of bytes waiting to be read.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+
+        """
         # Get input waiting
         buf = array.array('I', [0])
         try:
@@ -200,6 +288,15 @@ class Serial(object):
         return buf[0]
 
     def output_wating(self):
+        """Query the number of bytes waiting to be written to the serial port.
+
+        Returns:
+            int: number of bytes waiting to be written.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+
+        """
         # Get input waiting
         buf = array.array('I', [0])
         try:
@@ -210,6 +307,12 @@ class Serial(object):
         return buf[0]
 
     def close(self):
+        """Close the tty Serial device.
+
+        Raises:
+            SerialError: if an I/O or OS error occurs.
+
+        """
         if self._fd is None:
             return
 
@@ -224,10 +327,18 @@ class Serial(object):
 
     @property
     def fd(self):
+        """Get the file descriptor of the underlying tty device.
+
+        :type: int
+        """
         return self._fd
 
     @property
     def devpath(self):
+        """Get the device path of the underlying tty device.
+
+        :type: str
+        """
         return self._devpath
 
     # Mutable properties
@@ -270,6 +381,15 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     baudrate = property(_get_baudrate, _set_baudrate)
+    """Get or set the baudrate.
+
+    Raises:
+        SerialError: if an I/O or OS error occurs.
+        TypeError: if `baudrate` type is not int.
+        ValueError: if `baudrate` value is not supported.
+
+    :type: int
+    """
 
     def _get_databits(self):
         # Get tty attributes
@@ -309,6 +429,15 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     databits = property(_get_databits, _set_databits)
+    """Get or set the data bits. Can be 5, 6, 7, 8.
+
+    Raises:
+        SerialError: if an I/O or OS error occurs.
+        TypeError: if `databits` type is not int.
+        ValueError: if `databits` value is invalid.
+
+    :type: int
+    """
 
     def _get_parity(self):
         # Get tty attributes
@@ -354,6 +483,15 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     parity = property(_get_parity, _set_parity)
+    """Get or set the parity. Can be "none", "even", "odd".
+
+    Raises:
+        SerialError: if an I/O or OS error occurs.
+        TypeError: if `parity` type is not str.
+        ValueError: if `parity` value is invalid.
+
+    :type: str
+    """
 
     def _get_stopbits(self):
         # Get tty attributes
@@ -391,6 +529,15 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     stopbits = property(_get_stopbits, _set_stopbits)
+    """Get or set the stop bits. Can be 1 or 2.
+
+    Raises:
+        SerialError: if an I/O or OS error occurs.
+        TypeError: if `stopbits` type is not int.
+        ValueError: if `stopbits` value is invalid.
+
+    :type: int
+    """
 
     def _get_xonxoff(self):
         # Get tty attributes
@@ -426,6 +573,14 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     xonxoff = property(_get_xonxoff, _set_xonxoff)
+    """Get or set software flow control.
+
+    Raises:
+        SerialError: if an I/O or OS error occurs.
+        TypeError: if `xonxoff` type is not bool.
+
+    :type: bool
+    """
 
     def _get_rtscts(self):
         # Get tty attributes
@@ -461,6 +616,14 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     rtscts = property(_get_rtscts, _set_rtscts)
+    """Get or set hardware flow control.
+
+    Raises:
+        SerialError: if an I/O or OS error occurs.
+        TypeError: if `rtscts` type is not bool.
+
+    :type: bool
+    """
 
     # String representation
 
