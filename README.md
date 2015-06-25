@@ -4,6 +4,8 @@
 
 python-periphery is a pure Python library for GPIO, SPI, I2C, MMIO, and Serial peripheral I/O interface access in userspace Linux. It is useful in embedded Linux environments (including BeagleBone, Raspberry Pi, etc. platforms) for interfacing with external peripherals. python-periphery is compatible with Python 2 and Python 3, is written in pure Python, and is MIT licensed.
 
+Using Lua or C? Check out the [lua-periphery](https://github.com/vsergeev/lua-periphery) and [c-periphery](https://github.com/vsergeev/c-periphery) projects.
+
 ## Installation
 
 With pip:
