@@ -1,4 +1,4 @@
-# python-periphery
+# python-periphery v1.0.0
 
 ## Linux Peripheral I/O (GPIO, SPI, I2C, MMIO, Serial) with Python 2 / Python 3
 
