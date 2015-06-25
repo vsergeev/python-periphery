@@ -6,7 +6,22 @@ python-periphery is a pure Python library for GPIO, SPI, I2C, MMIO, and Serial p
 
 ## Installation
 
-Coming soon.
+With pip:
+``` text
+$ pip install python-periphery
+```
+
+With easy_install:
+``` text
+$ easy_install python-periphery
+```
+
+With setup.py:
+``` text
+$ git clone https://github.com/vsergeev/python-periphery.git
+$ cd python-periphery
+$ python setup.py install
+```
 
 ## Examples
 
