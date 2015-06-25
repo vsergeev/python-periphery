@@ -179,7 +179,7 @@ class MMIO(object):
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            value (int): 32-bit value to write
+            value (int, long): 32-bit value to write
 
         Raises:
             TypeError: if `offset` or `value` type are invalid.
@@ -188,7 +188,7 @@ class MMIO(object):
         """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(value, int):
+        if not isinstance(value, int) and not isinstance(value, long):
             raise TypeError("Invalid value type, should be integer.")
         if value < 0 or value > 0xffffffff:
             raise ValueError("Value out of bounds.")
@@ -204,7 +204,7 @@ class MMIO(object):
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            value (int): 16-bit value to write
+            value (int, long): 16-bit value to write
 
         Raises:
             TypeError: if `offset` or `value` type are invalid.
@@ -213,7 +213,7 @@ class MMIO(object):
         """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(value, int):
+        if not isinstance(value, int) and not isinstance(value, long):
             raise TypeError("Invalid value type, should be integer.")
         if value < 0 or value > 0xffff:
             raise ValueError("Value out of bounds.")
@@ -229,7 +229,7 @@ class MMIO(object):
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            value (int): 8-bit value to write
+            value (int, long): 8-bit value to write
 
         Raises:
             TypeError: if `offset` or `value` type are invalid.
@@ -238,7 +238,7 @@ class MMIO(object):
         """
         if not isinstance(offset, int) and not isinstance(offset, long):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(value, int):
+        if not isinstance(value, int) and not isinstance(value, long):
             raise TypeError("Invalid value type, should be integer.")
         if value < 0 or value > 0xff:
             raise ValueError("Value out of bounds.")
