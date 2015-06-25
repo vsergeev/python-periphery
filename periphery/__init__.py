@@ -1,8 +1,8 @@
 __version__ = "1.0.0"
-"Module version string"
+"Module version string."
 
 version = (1,0,0)
-"Module version tuple"
+"Module version tuple."
 
 import time
 
