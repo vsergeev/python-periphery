@@ -287,7 +287,7 @@ class Serial(object):
 
         return buf[0]
 
-    def output_wating(self):
+    def output_waiting(self):
         """Query the number of bytes waiting to be written to the serial port.
 
         Returns:
