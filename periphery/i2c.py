@@ -88,7 +88,7 @@ class I2C(object):
 
     def transfer(self, address, messages):
         """Transfer `messages` to the specified I2C `address`. Modifies the
-        `messages` table with the results of any read transactions.
+        `messages` array with the results of any read transactions.
 
         Args:
             address (int): I2C address.
