@@ -52,18 +52,16 @@ class GPIO(object):
         if not os.path.isdir(gpio_path):
             # Export the pin
             try:
-                f_export = open("/sys/class/gpio/export", "w")
-                f_export.write("%d\n" % pin)
-                f_export.close()
+                with open("/sys/class/gpio/export", "w") as f_export:
+                    f_export.write("%d\n" % pin)
             except IOError as e:
                 raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
 
         # Write direction
         try:
             direction = direction.lower()
-            f_direction = open("/sys/class/gpio/gpio%d/direction" % pin, "w")
-            f_direction.write(direction + "\n")
-            f_direction.close()
+            with open("/sys/class/gpio/gpio%d/direction" % pin, "w") as f_direction:
+                f_direction.write(direction + "\n")
         except IOError as e:
             raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
@@ -229,9 +227,8 @@ class GPIO(object):
     def _get_direction(self):
         # Read direction
         try:
-            f_direction = open("/sys/class/gpio/gpio%d/direction" % self._pin, "r")
-            direction = f_direction.read()
-            f_direction.close()
+            with open("/sys/class/gpio/gpio%d/direction" % self._pin, "r") as f_direction:
+                direction = f_direction.read()
         except IOError as e:
             raise GPIOError(e.errno, "Getting GPIO direction: " + e.strerror)
 
@@ -246,9 +243,8 @@ class GPIO(object):
         # Write direction
         try:
             direction = direction.lower()
-            f_direction = open("/sys/class/gpio/gpio%d/direction" % self._pin, "w")
-            f_direction.write(direction + "\n")
-            f_direction.close()
+            with open("/sys/class/gpio/gpio%d/direction" % self._pin, "w") as f_direction:
+                f_direction.write(direction + "\n")
         except IOError as e:
             raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
@@ -269,9 +265,8 @@ class GPIO(object):
     def _get_edge(self):
         # Read edge
         try:
-            f_edge = open("/sys/class/gpio/gpio%d/edge" % self._pin, "r")
-            edge = f_edge.read()
-            f_edge.close()
+            with open("/sys/class/gpio/gpio%d/edge" % self._pin, "r") as f_edge:
+                edge = f_edge.read()
         except IOError as e:
             raise GPIOError(e.errno, "Getting GPIO edge: " + e.strerror)
 
@@ -286,9 +281,8 @@ class GPIO(object):
         # Write edge
         try:
             edge = edge.lower()
-            f_edge = open("/sys/class/gpio/gpio%d/edge" % self._pin, "w")
-            f_edge.write(edge + "\n")
-            f_edge.close()
+            with open("/sys/class/gpio/gpio%d/edge" % self._pin, "w") as f_edge:
+                f_edge.write(edge + "\n")
         except IOError as e:
             raise GPIOError(e.errno, "Setting GPIO edge: " + e.strerror)
 
