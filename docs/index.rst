@@ -6,11 +6,12 @@
 Welcome to python-periphery's documentation!
 ============================================
 
-python-periphery is a pure Python library for GPIO, SPI, I2C, MMIO, and Serial
-peripheral I/O interface access in userspace Linux. It is useful in embedded
-Linux environments (including BeagleBone, Raspberry Pi, etc. platforms) for
-interfacing with external peripherals. python-periphery is compatible with
-Python 2 and Python 3, is written in pure Python, and is MIT licensed.
+python-periphery is a pure Python library for GPIO, LED, SPI, I2C, MMIO, and
+Serial peripheral I/O interface access in userspace Linux. It is useful in
+embedded Linux environments (including BeagleBone, Raspberry Pi, etc.
+platforms) for interfacing with external peripherals. python-periphery is
+compatible with Python 2 and Python 3, is written in pure Python, and is MIT
+licensed.
 
 Contents
 --------
@@ -19,6 +20,7 @@ Contents
    :maxdepth: 4
 
    gpio
+   led
    spi
    i2c
    mmio

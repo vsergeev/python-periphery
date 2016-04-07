@@ -1,8 +1,8 @@
 # python-periphery v1.0.0
 
-## Linux Peripheral I/O (GPIO, SPI, I2C, MMIO, Serial) with Python 2 / Python 3
+## Linux Peripheral I/O (GPIO, LED, SPI, I2C, MMIO, Serial) with Python 2 / Python 3
 
-python-periphery is a pure Python library for GPIO, SPI, I2C, MMIO, and Serial peripheral I/O interface access in userspace Linux. It is useful in embedded Linux environments (including BeagleBone, Raspberry Pi, etc. platforms) for interfacing with external peripherals. python-periphery is compatible with Python 2 and Python 3, is written in pure Python, and is MIT licensed.
+python-periphery is a pure Python library for GPIO, LED, SPI, I2C, MMIO, and Serial peripheral I/O interface access in userspace Linux. It is useful in embedded Linux environments (including BeagleBone, Raspberry Pi, etc. platforms) for interfacing with external peripherals. python-periphery is compatible with Python 2 and Python 3, is written in pure Python, and is MIT licensed.
 
 Using Lua or C? Check out the [lua-periphery](https://github.com/vsergeev/lua-periphery) and [c-periphery](https://github.com/vsergeev/c-periphery) projects.
 
@@ -45,6 +45,28 @@ gpio_out.close()
 ```
 
 [Go to GPIO documentation.](http://python-periphery.readthedocs.org/en/latest/gpio.html)
+
+### LED
+
+``` python
+from periphery import LED
+
+# Open LED "led0" with initial state off
+led0 = LED("led0", False)
+# Open LED "led1" with initial state on
+led1 = LED("led1", True)
+
+value = led0.read()
+led1.write(value)
+
+# Set custom brightness level
+led1.write(led1.max_brightness / 2)
+
+led0.close()
+led1.close()
+```
+
+[Go to LED documentation.](http://python-periphery.readthedocs.org/en/latest/led.html)
 
 ### SPI
 
