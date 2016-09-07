@@ -23,6 +23,9 @@ class PWM(object):
         self._fd = None
         self._channel = None
         self._pin = None
+        self._period = None
+        self._duty = None
+        self._polarity="normal"
         self._open(channel, pin, polarity)
 
     def __del__(self):
@@ -64,6 +67,10 @@ class PWM(object):
         self._channel = channel
         self._pin = pin
 
+        self._period = self._read_pin_attr('period')
+        self._duty_cycle = self._read_pin_attr('duty_cycle')
+        self._enabled = self._read_pin_attr('enable')
+
     def close(self):
         """ Closes the sysfs PWM
         
@@ -87,11 +94,18 @@ class PWM(object):
             self.pin_path.format(self._pin),
             attr)
 
-        print(path)
-        print(str(value))
-
         with open(path, 'w') as f_attr:
                 f_attr.write(str(value))
+
+    def _read_pin_attr(self, attr):
+        path = os.path.join(
+            self.sysfs_path,
+            self.channel_path.format(self._channel),
+            self.pin_path.format(self._pin),
+            attr)
+
+        with open(path, 'r') as f_attr:
+            return f_attr.read()
 
     @property
     def fd(self):
