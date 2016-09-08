@@ -19,6 +19,25 @@ class PWM(object):
     pin_enable_path = "enable"
 
     def __init__(self, channel, pin, polarity="normal"):
+    """Instantiate a PWM object and open the sysfs PWM correponsing to the
+    specified pin, with the specified polarity
+
+    Args:
+        channel (int): Linux channel number, for boards with multiple PWM
+        controllers
+
+        pin: (int): pin number
+        polarity (str): read/write, can be "normal" or "inversed"
+
+    Returns:
+        PWM: PWM object
+
+    Raises:
+        PWMError: if an I/I or OS error occurs.
+        TypeError: if attr types are invalid.
+        ValueError: if attr values are invalid.
+        AttributeError: if a non-existent PWM path/object is referenced.
+    """
 
         self._fd = None
         self._channel = None
