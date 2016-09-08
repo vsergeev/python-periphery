@@ -68,7 +68,7 @@ class PWM(object):
 
         channel_path = os.path.join(self.sysfs_path, self.channel_path.format(channel))
         if not os.path.isdir(channel_path):
-            raise ValueError("PWM channel does not exist, check that the required modules are loaded.")
+            raise AttributeError("PWM channel does not exist, check that the required modules are loaded.")
             
         pin_path = os.path.join(channel_path, self.pin_path.format(pin))
         if not os.path.isdir(pin_path):
