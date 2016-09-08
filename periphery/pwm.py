@@ -96,6 +96,8 @@ class PWM(object):
         Rasies:
             PWMError: if an I/O or OS error occurs """
 
+        self.enabled = 0
+
         if self._fd is None:
             return
 
