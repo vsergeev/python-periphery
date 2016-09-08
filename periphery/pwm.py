@@ -27,7 +27,7 @@ class PWM(object):
         controllers
 
         pin: (int): pin number
-        polarity (str): read/write, can be "normal" or "inversed"
+        polarity (str): can be "normal" or "inversed"
 
     Returns:
         PWM: PWM object
