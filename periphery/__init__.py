@@ -34,6 +34,7 @@ def sleep_us(microseconds):
     time.sleep(microseconds / 1000000.0)
 
 from periphery.gpio import GPIO, GPIOError
+from periphery.pwm import PWM, PWMError
 from periphery.spi import SPI, SPIError
 from periphery.i2c import I2C, I2CError
 from periphery.mmio import MMIO, MMIOError
