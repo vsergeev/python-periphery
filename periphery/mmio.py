@@ -99,7 +99,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
-        return ctypes.c_uint32.from_buffer(self.mapping, offset).value
+        return struct.unpack("=L", self.mapping[offset:offset+4])[0]
 
     def read16(self, offset):
         """Read 16-bits from mapped physical memory, starting at the specified
@@ -122,7 +122,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
-        return ctypes.c_uint16.from_buffer(self.mapping, offset).value
+        return struct.unpack("=H", self.mapping[offset:offset+2])[0]
 
     def read8(self, offset):
         """Read 8-bits from mapped physical memory, starting at the specified
@@ -145,7 +145,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
-        return ctypes.c_uint8.from_buffer(self.mapping, offset).value
+        return struct.unpack("B", self.mapping[offset:offset+1])[0]
 
     def read(self, offset, length):
         """Read an array of bytes from mapped physical memory, starting at the
@@ -169,9 +169,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, length)
-
-        c_byte_array = (ctypes.c_uint8 * length).from_buffer(self.mapping, offset)
-        return bytes(bytearray(c_byte_array))
+        return bytes(self.mapping[offset:offset+length])
 
     def write32(self, offset, value):
         """Write 32-bits to mapped physical memory, starting at the specified
