@@ -2,6 +2,7 @@ import sys
 import os
 import mmap
 import ctypes
+import struct
 
 # Alias long to int on Python 3
 if sys.version_info[0] >= 3:
@@ -195,7 +196,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
-        ctypes.c_uint32.from_buffer(self.mapping, offset).value = value
+        self.mapping[offset:offset+4] = struct.pack("=L", value)
 
     def write16(self, offset, value):
         """Write 16-bits to mapped physical memory, starting at the specified
@@ -220,7 +221,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
-        ctypes.c_uint16.from_buffer(self.mapping, offset).value = value
+        self.mapping[offset:offset+2] = struct.pack("=H", value)
 
     def write8(self, offset, value):
         """Write 8-bits to mapped physical memory, starting at the specified
@@ -245,7 +246,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
-        ctypes.c_uint8.from_buffer(self.mapping, offset).value = value
+        self.mapping[offset:offset+1] = struct.pack("B", value)
 
     def write(self, offset, data):
         """Write an array of bytes to mapped physical memory, starting at the
@@ -269,11 +270,8 @@ class MMIO(object):
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, len(data))
 
-        data = bytearray(data)
-
-        c_byte_array = (ctypes.c_uint8 * len(data)).from_buffer(self.mapping, offset)
-        for i in range(len(data)):
-            c_byte_array[i] = data[i]
+        data = bytes(bytearray(data))
+        self.mapping[offset:offset+len(data)] = data
 
     def close(self):
         """Unmap the MMIO object's mapped physical memory."""
@@ -315,4 +313,3 @@ class MMIO(object):
 
     def __str__(self):
         return "MMIO 0x%08x (size=%d)" % (self.base, self.size)
-
