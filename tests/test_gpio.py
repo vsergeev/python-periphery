@@ -170,11 +170,11 @@ if __name__ == "__main__":
     pin_input = int(sys.argv[1])
     pin_output = int(sys.argv[2])
 
-    print("Starting MMIO tests...")
+    print("Starting GPIO tests...")
 
     test_arguments()
     test_open_close()
     test_loopback()
     test_interactive()
 
-    print("All MMIO tests passed.")
+    print("All GPIO tests passed.")
