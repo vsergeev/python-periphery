@@ -1,8 +1,8 @@
 # python-periphery v1.0.0
 
-## Linux Peripheral I/O (GPIO, LED, SPI, I2C, MMIO, Serial) with Python 2 / Python 3
+## Linux Peripheral I/O (GPIO, LED, PWM, SPI, I2C, MMIO, Serial) with Python 2 / Python 3
 
-python-periphery is a pure Python library for GPIO, LED, SPI, I2C, MMIO, and Serial peripheral I/O interface access in userspace Linux. It is useful in embedded Linux environments (including BeagleBone, Raspberry Pi, etc. platforms) for interfacing with external peripherals. python-periphery is compatible with Python 2 and Python 3, is written in pure Python, and is MIT licensed.
+python-periphery is a pure Python library for GPIO, LED, PWM, SPI, I2C, MMIO, and Serial peripheral I/O interface access in userspace Linux. It is useful in embedded Linux environments (including BeagleBone, Raspberry Pi, etc. platforms) for interfacing with external peripherals. python-periphery is compatible with Python 2 and Python 3, is written in pure Python, and is MIT licensed.
 
 Using Lua or C? Check out the [lua-periphery](https://github.com/vsergeev/lua-periphery) and [c-periphery](https://github.com/vsergeev/c-periphery) projects.
 
@@ -67,6 +67,29 @@ led1.close()
 ```
 
 [Go to LED documentation.](http://python-periphery.readthedocs.org/en/latest/led.html)
+
+### PWM
+
+``` python
+from periphery import PWM
+
+# Open PWM channel 0, pin 10
+pwm = PWM(0, 10)
+
+# Set frequency to 1 kHz
+pwm.frequency = 1e3
+# Set duty cycle to 75%
+pwm.duty_cycle = 0.75
+
+pwm.enable()
+
+# Change duty cycle to 50%
+pwm.duty_cycle = 0.50
+
+pwm.close()
+```
+
+[Go to PWM documentation.](http://python-periphery.readthedocs.org/en/latest/pwm.html)
 
 ### SPI
 

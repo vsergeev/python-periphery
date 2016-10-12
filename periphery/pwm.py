@@ -1,51 +1,45 @@
 import os
 
 class PWMError(IOError):
-    """ Base class for PWM errors. """
+    """Base class for PWM errors."""
     pass
 
 class PWM(object):
-    sysfs_path = "/sys/class/pwm/"
-    channel_path = "pwmchip{}"
+    # Sysfs paths
+    _sysfs_path = "/sys/class/pwm/"
+    _channel_path = "pwmchip{}"
 
-    # Channel specific paths
-    export_path = "export"
-    pin_path = "pwm{}"
+    # Channel paths
+    _export_path = "export"
+    _pin_path = "pwm{}"
 
-    # Pin specific paths
-    pin_period_path = "period"
-    pin_duty_path = "duty_cycle"
-    pin_polarity_path = "polarity"
-    pin_enable_path = "enable"
+    # Pin attribute paths
+    _pin_period_path = "period"
+    _pin_duty_cycle_path = "duty_cycle"
+    _pin_polarity_path = "polarity"
+    _pin_enable_path = "enable"
 
-    def __init__(self, channel, pin, polarity="normal"):
-        """Instantiate a PWM object and open the sysfs PWM correponsing to the
-        specified pin, with the specified polarity
+    def __init__(self, channel, pin):
+        """Instantiate a PWM object and open the sysfs PWM corresponding to the
+        specified channel and pin.
 
         Args:
-            channel (int): Linux channel number, for boards with multiple PWM
-            controllers
-
-            pin: (int): pin number
-            polarity (str): can be "normal" or "inversed"
+            channel (int): Linux channel number.
+            pin (int): Linux pin number.
 
         Returns:
-            PWM: PWM object
+            PWM: PWM object.
 
         Raises:
-            PWMError: if an I/I or OS error occurs.
-            TypeError: if attr types are invalid.
-            ValueError: if attr values are invalid.
-            AttributeError: if a non-existent PWM path/object is referenced.
+            PWMError: if an I/O or OS error occurs.
+            TypeError: if `channel` or `pin` types are invalid.
+            ValueError: if PWM channel does not exist.
+
         """
 
-        self._fd = None
         self._channel = None
         self._pin = None
-        self._period = None
-        self._duty = None
-        self._polarity="normal"
-        self._open(channel, pin, polarity)
+        self._open(channel, pin)
 
     def __del__(self):
         self.close()
@@ -56,164 +50,230 @@ class PWM(object):
     def __exit__(self, t, value, traceback):
         self.close()
 
-    def _open(self, channel, pin, polarity):
+    def _open(self, channel, pin):
         if not isinstance(channel, int):
             raise TypeError("Invalid channel type, should be integer.")
         if not isinstance(pin, int):
             raise TypeError("Invalid pin type, should be integer.")
-        if not isinstance(polarity, str):
-            raise TypeError("Invalid polarity type, should be string.")
-        if polarity.lower() not in ['normal', 'inversed']:
-            raise ValueError("Invalid polarity, can be: 'normal', or 'inversed'.")
 
-        channel_path = os.path.join(self.sysfs_path, self.channel_path.format(channel))
+        channel_path = os.path.join(self._sysfs_path, self._channel_path.format(channel))
         if not os.path.isdir(channel_path):
-            raise AttributeError("PWM channel does not exist, check that the required modules are loaded.")
-            
-        pin_path = os.path.join(channel_path, self.pin_path.format(pin))
+            raise ValueError("PWM channel does not exist, check that the required modules are loaded.")
+
+        pin_path = os.path.join(channel_path, self._pin_path.format(pin))
         if not os.path.isdir(pin_path):
             try:
-                with open(os.path.join(channel_path, self.export_path), "w") as f_export:
+                with open(os.path.join(channel_path, self._export_path), "w") as f_export:
                     f_export.write("%d\n" % pin)
             except IOError as e:
-                raise PWMError(e.errno, "Exporting PWM: " + e.strerror)
-
-        try:
-            self._fd = os.open(os.path.join(pin_path, self.pin_period_path), os.O_RDWR)
-        except OSError as e:
-            raise PWMError(e.errno, "Opening PWM: " + e.strerror)
+                raise PWMError(e.errno, "Exporting PWM pin: " + e.strerror)
 
         self._channel = channel
         self._pin = pin
 
-        self._period = self._read_pin_attr('period')
-        self._duty_cycle = self._read_pin_attr('duty_cycle')
-        self._enabled = self._read_pin_attr('enable')
+        # Look up the period, for fast duty cycle updates
+        self._period = self._get_period()
 
     def close(self):
-        """ Closes the sysfs PWM
-        
-        Rasies:
-            PWMError: if an I/O or OS error occurs """
-
-        self.enabled = 0
-
-        if self._fd is None:
-            return
-
-        try:
-            os.close(self._fd)
-        except OSError as e:
-            raise PWMError(e.errno, "Closing PWM: " + e.strerror)
-
-        self._fd = None
+        """Close the sysfs PWM."""
+        self._channel = None
+        self._pin = None
 
     def _write_pin_attr(self, attr, value):
         path = os.path.join(
-            self.sysfs_path,
-            self.channel_path.format(self._channel),
-            self.pin_path.format(self._pin),
+            self._sysfs_path,
+            self._channel_path.format(self._channel),
+            self._pin_path.format(self._pin),
             attr)
 
         with open(path, 'w') as f_attr:
-                f_attr.write(str(value))
+            f_attr.write(value + "\n")
 
     def _read_pin_attr(self, attr):
         path = os.path.join(
-            self.sysfs_path,
-            self.channel_path.format(self._channel),
-            self.pin_path.format(self._pin),
+            self._sysfs_path,
+            self._channel_path.format(self._channel),
+            self._pin_path.format(self._pin),
             attr)
 
         with open(path, 'r') as f_attr:
-            return f_attr.read()
+            return f_attr.read().strip()
 
-    @property
-    def fd(self):
-        return self._fd
+    # Methods
+
+    def enable(self):
+        """Enable the PWM output."""
+        self.enabled = True
+
+    def disable(self):
+        """Disable the PWM output."""
+        self.enabled = False
+
+    # Immutable properties
 
     @property
     def channel(self):
+        """Get the sysfs PWM channel number.
+
+        :type: int
+        """
         return self._channel
 
     @property
     def pin(self):
+        """Get the sysfs PWM pin number.
+
+        :type: int
+        """
         return self._pin
 
-    @property
-    def frequency(self):
-        return (1000000000 / self._period)
+    # Mutable properties
 
-    @frequency.setter
-    def frequency(self, value):
-        if not isinstance(value, int):
-            raise ValueError("Invalid frequency, must be integer.")
+    def _get_period(self):
+        try:
+            period_ns = int(self._read_pin_attr(self._pin_period_path))
+        except ValueError:
+            raise PWMError(None, "Unknown period value: \"%s\"" % period_ns)
 
-        period = (1000000000 / value)
-        self._write_pin_attr(self.pin_period_path, period)
+        # Convert period from nanoseconds to seconds
+        period = period_ns / 1e9
+
+        # Update our cached period
         self._period = period
 
-    @property
-    def period(self):
-        return self._period
+        return period
 
-    @period.setter
-    def period(self, value):
-        if not isinstance(value, int):
-            raise ValueError("Invalid period, must be integer.")
+    def _set_period(self, period):
+        if not isinstance(period, (int, float)):
+            raise TypeError("Invalid period type, should be int or float.")
 
-        self._write_pin_attr(self.pin_period_path, value)
-        self._period = value
+        # Convert period from seconds to integer nanoseconds
+        period_ns = int(period * 1e9)
 
-    @property
-    def duty_cycle(self):
-        return self._duty_cycle
+        self._write_pin_attr(self._pin_period_path, "{}".format(period_ns))
 
-    @duty_cycle.setter
-    def duty_cycle(self, value):
-        if not isinstance(value, int):
-            raise ValueError("Invalid duty cycle, must be integer.")
+        # Update our cached period
+        self._period = float(period)
 
-        self._write_pin_attr(self.pin_duty_path, value)
-        self._duty_cycle = value
+    period = property(_get_period, _set_period)
+    """Get or set the PWM's output period in seconds.
 
-    @property
-    def duty_cycle_pct(self):
-        return 100.0 / self._period * self.duty_cycle
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not int or float.
 
-    @duty_cycle_pct.setter
-    def duty_cycle_pct(self, value):
-        if not isinstance(value, int) or not 0 <= value <= 100:
-            raise ValueError("Invalid duty cycle pct, must be integer between 0-100")
+    :type: int, float
+    """
 
-        duty = self._period * (value / 100.0)
-        self._write_pin_attr(self.pin_duty_path, int(duty))
-        self._duty_cycle = duty
+    def _get_duty_cycle(self):
+        try:
+            duty_cycle_ns = int(self._read_pin_attr(self._pin_duty_cycle_path))
+        except ValueError:
+            raise PWMError(None, "Unknown duty cycle value: \"%s\"" % duty_cycle_ns)
 
-    @property
-    def polarity(self):
-        return self._polarity
+        # Convert duty cycle from nanoseconds to seconds
+        duty_cycle = duty_cycle_ns / 1e9
 
-    @polarity.setter
-    def polarity(self, value):
-        if not isinstance(value, str):
-            raise ValueError("Invalid polarity, can be: 'normal', or 'inversed'.")
+        # Convert duty cycle to ratio from 0.0 to 1.0
+        duty_cycle = duty_cycle / self._period
 
-        self._write_pin_attr(self.pin_polarity_path, value)
-        self._polarity = value
-    
-    @property
-    def enabled(self):
-        return self._enabled
+        return duty_cycle
 
-    @enabled.setter
-    def enabled(self, value):
-        if not isinstance(value, int):
-            raise ValueError("Invalid value for 'enable', must be integer.")
+    def _set_duty_cycle(self, duty_cycle):
+        if not isinstance(duty_cycle, (int, float)):
+            raise TypeError("Invalid duty cycle type, should be int or float.")
+        elif not 0.0 <= duty_cycle <= 1.0:
+            raise ValueError("Invalid duty cycle value, should be between 0.0 and 1.0.")
 
-        self._write_pin_attr(self.pin_enable_path, value)
-        self._enabled = value
+        # Convert duty cycle from ratio to seconds
+        duty_cycle = duty_cycle * self._period
+
+        # Convert duty cycle from seconds to integer nanoseconds
+        duty_cycle_ns = int(duty_cycle * 1e9)
+
+        self._write_pin_attr(self._pin_duty_cycle_path, "{}".format(duty_cycle_ns))
+
+    duty_cycle = property(_get_duty_cycle, _set_duty_cycle)
+    """Get or set the PWM's output duty cycle as a ratio from 0.0 to 1.0.
+
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not int or float.
+        ValueError: if value is out of bounds of 0.0 to 1.0.
+
+    :type: int, float
+    """
+
+    def _get_frequency(self):
+        return 1.0 / self.period
+
+    def _set_frequency(self, frequency):
+        if not isinstance(frequency, (int, float)):
+            raise TypeError("Invalid frequency type, should be int or float.")
+
+        self.period = 1.0 / frequency
+
+    frequency = property(_get_frequency, _set_frequency)
+    """Get or set the PWM's output frequency in Hertz.
+
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not int or float.
+
+    :type: int, float
+    """
+
+    def _get_polarity(self):
+        return self._read_pin_attr(self._pin_polarity_path)
+
+    def _set_polarity(self, polarity):
+        if not isinstance(polarity, str):
+            raise TypeError("Invalid polarity type, should be str.")
+        elif polarity.lower() not in ["normal", "inversed"]:
+            raise ValueError("Invalid polarity, can be: \"normal\" or \"inversed\".")
+
+        self._write_pin_attr(self._pin_polarity_path, polarity.lower())
+
+    polarity = property(_get_polarity, _set_polarity)
+    """Get or set the PWM's output polarity. Can be "normal" or "inversed".
+
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not str.
+        ValueError: if value is invalid.
+
+    :type: str
+    """
+
+    def _get_enabled(self):
+        enabled = self._read_pin_attr(self._pin_enable_path)
+
+        if enabled == "1":
+            return True
+        elif enabled == "0":
+            return False
+
+        raise PWMError(None, "Unknown enabled value: \"%s\"" % enabled)
+
+    def _set_enabled(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("Invalid enabled type, should be string.")
+
+        self._write_pin_attr(self._pin_enable_path, "1" if value else "0")
+
+    enabled = property(_get_enabled, _set_enabled)
+    """Get or set the PWM's output enabled state.
+
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not bool.
+
+    :type: bool
+    """
+
+    # String representation
 
     def __str__(self):
-        return "PWM%d, Pin %d (fd=%d, period=%d, duty_cycle=%d, polarity=%d, enable=%d)" % \
-            (self._channel, self._pin, self._fd, self._period, self._duty_cycle, self._polarity, self._enabled)
+        return "PWM%d, pin %d (period=%f sec, duty_cycle=%f%%, polarity=%s, enabled=%s)" % \
+            (self._channel, self._pin, self.period, self.duty_cycle * 100,
+             self.polarity, str(self.enabled))
