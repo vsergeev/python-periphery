@@ -200,7 +200,7 @@ class I2C(object):
                 TypeError: if `data`, `read`, or `flags` types are invalid.
 
             """
-            if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
+            if not isinstance(data, (bytes, bytearray, list)):
                 raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
             if not isinstance(read, bool):
                 raise TypeError("Invalid read type, should be boolean.")
