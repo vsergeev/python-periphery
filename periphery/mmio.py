@@ -42,9 +42,9 @@ class MMIO(object):
         self.close()
 
     def _open(self, physaddr, size):
-        if not isinstance(physaddr, int) and not isinstance(physaddr, long):
+        if not isinstance(physaddr, (int, long)):
             raise TypeError("Invalid physaddr type, should be integer.")
-        if not isinstance(size, int) and not isinstance(size, long):
+        if not isinstance(size, (int, long)):
             raise TypeError("Invalid size type, should be integer.")
 
         pagesize = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
@@ -94,7 +94,7 @@ class MMIO(object):
             ValueError: if `offset` is out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
 
         offset = self._adjust_offset(offset)
@@ -117,7 +117,7 @@ class MMIO(object):
             ValueError: if `offset` is out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
 
         offset = self._adjust_offset(offset)
@@ -140,7 +140,7 @@ class MMIO(object):
             ValueError: if `offset` is out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
 
         offset = self._adjust_offset(offset)
@@ -164,7 +164,7 @@ class MMIO(object):
             ValueError: if `offset` is out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
 
         offset = self._adjust_offset(offset)
@@ -185,9 +185,9 @@ class MMIO(object):
             ValueError: if `offset` or `value` are out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(value, int) and not isinstance(value, long):
+        if not isinstance(value, (int, long)):
             raise TypeError("Invalid value type, should be integer.")
         if value < 0 or value > 0xffffffff:
             raise ValueError("Value out of bounds.")
@@ -210,9 +210,9 @@ class MMIO(object):
             ValueError: if `offset` or `value` are out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(value, int) and not isinstance(value, long):
+        if not isinstance(value, (int, long)):
             raise TypeError("Invalid value type, should be integer.")
         if value < 0 or value > 0xffff:
             raise ValueError("Value out of bounds.")
@@ -235,9 +235,9 @@ class MMIO(object):
             ValueError: if `offset` or `value` are out of bounds.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(value, int) and not isinstance(value, long):
+        if not isinstance(value, (int, long)):
             raise TypeError("Invalid value type, should be integer.")
         if value < 0 or value > 0xff:
             raise ValueError("Value out of bounds.")
@@ -260,9 +260,9 @@ class MMIO(object):
             ValueError: if `offset` is out of bounds, or if data is not valid bytes.
 
         """
-        if not isinstance(offset, int) and not isinstance(offset, long):
+        if not isinstance(offset, (int, long)):
             raise TypeError("Invalid offset type, should be integer.")
-        if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
+        if not isinstance(data, (bytes, bytearray, list)):
             raise TypeError("Invalid data type, expected bytes, bytearray, or list.")
 
         offset = self._adjust_offset(offset)
