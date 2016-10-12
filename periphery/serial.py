@@ -222,7 +222,7 @@ class Serial(object):
             ValueError: if data is not valid bytes.
 
         """
-        if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
+        if not isinstance(data, (bytes, bytearray, list)):
             raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
 
         if isinstance(data, list):
