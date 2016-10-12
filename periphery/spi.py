@@ -74,7 +74,7 @@ class SPI(object):
             raise TypeError("Invalid devpath type, should be string.")
         elif not isinstance(mode, int):
             raise TypeError("Invalid mode type, should be integer.")
-        elif not isinstance(max_speed, int) and not isinstance(max_speed, float):
+        elif not isinstance(max_speed, (int, float)):
             raise TypeError("Invalid max_speed type, should be integer or float.")
         elif not isinstance(bit_order, str):
             raise TypeError("Invalid bit_order type, should be string.")
@@ -140,7 +140,7 @@ class SPI(object):
             ValueError: if data is not valid bytes.
 
         """
-        if not isinstance(data, bytes) and not isinstance(data, bytearray) and not isinstance(data, list):
+        if not isinstance(data, (bytes, bytearray, list)):
             raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
 
         # Create mutable array
@@ -264,7 +264,7 @@ class SPI(object):
         return buf[0]
 
     def _set_max_speed(self, max_speed):
-        if not isinstance(max_speed, int) and not isinstance(max_speed, float):
+        if not isinstance(max_speed, (int, float)):
             raise TypeError("Invalid max_speed type, should be integer or float.")
 
         # Set max speed
