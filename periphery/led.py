@@ -5,12 +5,17 @@ class LEDError(IOError):
     pass
 
 class LED(object):
-    def __init__(self, name, brightness):
-        """Instantiate an LED object and open the corresponding sysfs LED.
+    def __init__(self, name, brightness=None):
+        """Instantiate an LED object and open the sysfs LED corresponding to
+        the specified name.
+
+        `brightness` can be a boolean for on/off, integer value for a specific
+        brightness, or None to preserve existing brightness. Default is
+        preserve existing brightness.
 
         Args:
             name (str): Linux led name.
-            brightness (int): Initial brightness.
+            brightness (bool, int, None): Initial brightness.
 
         Returns:
             LED: LED object.
@@ -38,8 +43,8 @@ class LED(object):
     def _open(self, name, brightness):
         if not isinstance(name, str):
             raise TypeError("Invalid name type, should be string.")
-        if not isinstance(brightness, int):
-            raise TypeError("Invalid brightness type, should be int.")
+        if not isinstance(brightness, (bool, int, type(None))):
+            raise TypeError("Invalid brightness type, should be bool, int, or None.")
 
         led_path = "/sys/class/leds/%s" % name
 
@@ -63,9 +68,6 @@ class LED(object):
         self._name = name
 
         # Set initial brightness
-        if brightness and not 0 <= brightness <= max_brightness:
-            raise ValueError("Invalid brightness value, should be between 0 and %d." % max_brightness)
-
         if brightness:
             self.write(brightness)
 
@@ -98,19 +100,25 @@ class LED(object):
     def write(self, brightness):
         """Set the brightness of the LED to `brightness`.
 
+        `brightness` can be a boolean for on/off, or integer value for a
+        specific brightness.
+
         Args:
-            brightness (int): Brightness value to set.
+            brightness (bool, int): Brightness value to set.
 
         Raises:
             LEDError: if an I/O or OS error occurs.
             TypeError: if `brightness` type is not bool or int.
 
         """
-        if not isinstance(brightness, int):
-            raise TypeError("Invalid brightness type, should be int.")
+        if not isinstance(brightness, (bool, int)):
+            raise TypeError("Invalid brightness type, should be bool or int.")
 
-        if not 0 <= brightness <= self._max_brightness:
-            raise ValueError("Invalid brightness value, should be between 0 and %d." % self._max_brightness)
+        if isinstance(brightness, bool):
+            brightness = self._max_brightness if brightness else 0
+        else:
+            if not 0 <= brightness <= self._max_brightness:
+                raise ValueError("Invalid brightness value, should be between 0 and %d." % self._max_brightness)
 
         # Write value
         try:
@@ -185,7 +193,7 @@ class LED(object):
 
     Raises:
         LEDError: if an I/O or OS error occurs.
-        TypeError: if `brightness` type is not int.
+        TypeError: if `brightness` type is not bool or int.
         ValueError: if `brightness` value is invalid.
 
     :type: int

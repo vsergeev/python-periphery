@@ -47,6 +47,14 @@ def test_open_close():
     led.brightness = 0
     assert led.brightness == 0
 
+    # Set brightness to True, check brightness
+    led.write(True)
+    assert led.read() == led.max_brightness
+
+    # Set brightness to False, check brightness
+    led.write(False)
+    assert led.read() == 0
+
     led.close()
 
     print("Open/close test passed.")
@@ -54,20 +62,20 @@ def test_open_close():
 def test_interactive():
     print("Starting interactive test...")
 
-    led = periphery.LED(led_name, 0)
+    led = periphery.LED(led_name, False)
 
     raw_input("Press enter to continue...")
 
     # Turn LED off
-    led.write(0)
+    led.write(False)
     assert raw_input("LED is off? y/n ") == "y"
 
     # Turn LED on
-    led.write(led.max_brightness)
+    led.write(True)
     assert raw_input("LED is on? y/n ") == "y"
 
     # Turn LED off
-    led.write(0)
+    led.write(False)
     assert raw_input("LED is off? y/n ") == "y"
 
     led.close()
