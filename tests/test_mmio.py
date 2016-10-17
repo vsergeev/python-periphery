@@ -12,6 +12,8 @@ USB_VID_PID_OFFSET      = 0x7f4
 USB_VID_PID             = 0x04516141
 RTCSS_BASE              = 0x44e3e000
 RTC_SCRATCH2_REG_OFFSET = 0x68
+RTC_KICK0R_REG_OFFSET   = 0x6C
+RTC_KICK1R_REG_OFFSET   = 0x70
 
 def test_arguments():
     print("Starting arguments test...")
@@ -71,6 +73,10 @@ def test_loopback():
     # Open RTC subsystem
     mmio = periphery.MMIO(RTCSS_BASE, PAGE_SIZE)
 
+    # Disable write protection
+    mmio.write32(RTC_KICK0R_REG_OFFSET, 0x83E70B13)
+    mmio.write32(RTC_KICK1R_REG_OFFSET, 0x95A4F1E0)
+
     # Write/Read RTC Scratch2 Register
     mmio.write32(RTC_SCRATCH2_REG_OFFSET, 0xdeadbeef)
     assert mmio.read32(RTC_SCRATCH2_REG_OFFSET) == 0xdeadbeef
@@ -81,14 +87,22 @@ def test_loopback():
     assert data == b"\xaa\xbb\xcc\xdd"
 
     # Write/Read RTC Scratch2 Register with bytearray write
-    mmio.write(RTC_SCRATCH2_REG_OFFSET, bytearray(b"\xaa\xbb\xcc\xdd"))
+    mmio.write(RTC_SCRATCH2_REG_OFFSET, bytearray(b"\xbb\xcc\xdd\xee"))
     data = mmio.read(RTC_SCRATCH2_REG_OFFSET, 4)
-    assert data == b"\xaa\xbb\xcc\xdd"
+    assert data == b"\xbb\xcc\xdd\xee"
 
     # Write/Read RTC Scratch2 Register with list write
-    mmio.write(RTC_SCRATCH2_REG_OFFSET, [0xaa, 0xbb, 0xcc, 0xdd])
+    mmio.write(RTC_SCRATCH2_REG_OFFSET, [0xcc, 0xdd, 0xee, 0xff])
     data = mmio.read(RTC_SCRATCH2_REG_OFFSET, 4)
-    assert data == b"\xaa\xbb\xcc\xdd"
+    assert data == b"\xcc\xdd\xee\xff"
+
+    # Write/Read RTC Scratch2 Register with 16-bit write
+    mmio.write16(RTC_SCRATCH2_REG_OFFSET, 0xaabb)
+    assert mmio.read16(RTC_SCRATCH2_REG_OFFSET) == 0xaabb
+
+    # Write/Read RTC Scratch2 Register with 8-bit write
+    mmio.write16(RTC_SCRATCH2_REG_OFFSET, 0xab)
+    assert mmio.read8(RTC_SCRATCH2_REG_OFFSET) == 0xab
 
     mmio.close()
 
@@ -114,12 +128,12 @@ def test_interactive():
 
     bcd2dec = lambda x: 10*((x >> 4) & 0xf) + (x & 0xf)
 
-    print("Data: %04d-%02d-%02d" % (2000+bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
+    print("Date: %04d-%02d-%02d" % (2000+bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
     print("Time: %02d:%02d:%02d" % (bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
 
     periphery.sleep(3)
 
-    print("Data: %04d-%02d-%02d" % (2000+bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
+    print("Date: %04d-%02d-%02d" % (2000+bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
     print("Time: %02d:%02d:%02d" % (bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
 
     toc = time.time()
