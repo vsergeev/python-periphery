@@ -167,9 +167,10 @@ class Serial(object):
 
         `timeout` can be positive for a timeout in seconds, 0 for a
         non-blocking read, or negative or None for a blocking read that will
-        block until `length` number of bytes are read.
+        block until `length` number of bytes are read. Default is a blocking
+        read.
 
-        For a non-blocking or timeout bound read, read() may return data whose
+        For a non-blocking or timeout-bound read, read() may return data whose
         length is less than or equal to the requested length.
 
         Args:
@@ -308,7 +309,7 @@ class Serial(object):
         return buf[0]
 
     def close(self):
-        """Close the tty Serial device.
+        """Close the tty device.
 
         Raises:
             SerialError: if an I/O or OS error occurs.
