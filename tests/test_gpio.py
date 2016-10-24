@@ -1,9 +1,15 @@
 import sys
+import threading
+import time
+
 import periphery
 from .asserts import AssertRaises
 
 if sys.version_info[0] == 3:
     raw_input = input
+    import queue
+else:
+    import Queue as queue
 
 pin_input = None
 pin_output = None
@@ -109,21 +115,65 @@ def test_loopback():
     gpio_out.write(True)
     assert gpio_in.read() == True
 
-    # Check poll falling (1->0) interrupt
-    print("Check poll faliing 1 -> 0 interrupt")
+    # Wrapper for running poll() in a thread
+    def threaded_poll(gpio, timeout):
+        ret = queue.Queue()
+        def f():
+            ret.put(gpio.poll(timeout))
+        thread = threading.Thread(target=f)
+        thread.start()
+        return ret
+
+    # Check poll falling 1 -> 0 interrupt
+    print("Check poll falling 1 -> 0 interrupt")
     gpio_in.edge = "falling"
+    poll_ret = threaded_poll(gpio_in, 5)
+    time.sleep(1)
     gpio_out.write(False)
-    assert gpio_in.poll(0.1) == True
+    assert poll_ret.get() == True
+    assert gpio_in.read() == False
+
+    # Check poll timeout on 0 -> 0
+    print("Check poll falling timeout on 0 -> 0")
+    poll_ret = threaded_poll(gpio_in, 2)
+    time.sleep(1)
+    gpio_out.write(False)
+    assert poll_ret.get() == False
     assert gpio_in.read() == False
 
     # Check poll rising 0 -> 1 interrupt
-    print("Check poll faliing 0 -> 1 interrupt")
+    print("Check poll rising 0 -> 1 interrupt")
     gpio_in.edge = "rising"
+    poll_ret = threaded_poll(gpio_in, 5)
+    time.sleep(1)
     gpio_out.write(True)
-    assert gpio_in.poll(0.1) == True
+    assert poll_ret.get() == True
+    assert gpio_in.read() == True
+
+    # Check poll timeout on 1 -> 1
+    print("Check poll rising timeout on 1 -> 1")
+    poll_ret = threaded_poll(gpio_in, 2)
+    time.sleep(1)
+    gpio_out.write(True)
+    assert poll_ret.get() == False
+    assert gpio_in.read() == True
+
+    # Check poll rising+falling interrupts
+    print("Check poll rising/falling interrupt")
+    gpio_in.edge = "both"
+    poll_ret = threaded_poll(gpio_in, 5)
+    time.sleep(1)
+    gpio_out.write(False)
+    assert poll_ret.get() == True
+    assert gpio_in.read() == False
+    poll_ret = threaded_poll(gpio_in, 5)
+    time.sleep(1)
+    gpio_out.write(True)
+    assert poll_ret.get() == True
     assert gpio_in.read() == True
 
     # Check poll timeout
+    print("Check poll timeout")
     assert gpio_in.poll(1) == False
 
     gpio_in.close()
@@ -163,7 +213,7 @@ if __name__ == "__main__":
         print("  gpio2      gpio #2 (connected in to gpio #1)")
         print("")
         print("Hint: for BeagleBone Black, connect a wire between")
-        print("GPIO 66 (P8.7) and GPIO 67 (P8.8), then run this test with:")
+        print("GPIO 66 (P8.7) and GPIO 67 (P8.8), and then run this test:")
         print("    python -m tests.test_gpio 66 67")
         sys.exit(1)
 
