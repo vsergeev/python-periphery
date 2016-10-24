@@ -113,9 +113,8 @@ if __name__ == "__main__":
         print(" i2c device 2        i2c device path for observation with logic analyzer / oscilloscope")
         print(" i2c eeprom address  address of EEPROM on i2c device 1 bus")
         print("")
-        print("Hint: for BeagleBone block, use onboard EEPROM on /dev/i2c-0, and export I2C1 to /dev/i2c-2 with:")
-        print("    echo BB-I2C1A1 > /sys/devices/bone_capemgr.9/slots")
-        print("to enable I2C1 (SCL=P9.24, SDA=P9.26), then run this test:")
+        print("Hint: for BeagleBone Black, use onboard EEPROM on /dev/i2c-0 and")
+        print("I2C1 (SCL=P9.24, SDA=P9.26) on /dev/i2c-2, and run this test:")
         print("    python -m tests.test_i2c /dev/i2c-0 /dev/i2c-2 0x50")
         sys.exit(1)
 
