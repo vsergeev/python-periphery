@@ -167,11 +167,10 @@ if __name__ == "__main__":
         print("")
         print("  serial device  serial device with TX/RX loopback installed")
         print("")
-        print("Hint: for BeagleBone Black, export UART4 to /dev/ttyO4 with:")
-        print("    echo BB-UART4 > /sys/devices/bone_capemgr.9/slots")
-        print("to enable UART4 (TX=P9.13 RX=P9.11).")
-        print("Connect a wire between TX and RX, then run this test:")
-        print("    python -m tests.test_serial /dev/ttyO4")
+        print("Hint: for BeagleBone Black, enable UART4 (TX=P9.13, RX=P9.11) with")
+        print("    echo BB-UART4 > /sys/devices/platform/bone_capemgr/slots")
+        print("connect a wire between TX and RX, and then run this test:")
+        print("    python -m tests.test_serial /dev/ttyS4")
         sys.exit(1)
 
     serial_device = sys.argv[1]
