@@ -189,9 +189,11 @@ class I2C(object):
             """Instantiate an I2C Message object.
 
             Args:
-                data (bytes, bytearray, list): a byte array or list of 8-bit integers to write.
-                read (bool): specify this as a read transaction, where `data` serves as placeholder bytes for the read.
-                flags (int): additional i2c-dev flags.
+                data (bytes, bytearray, list): a byte array or list of 8-bit
+                             integers to write.
+                read (bool): specify this as a read message, where `data`
+                             serves as placeholder bytes for the read.
+                flags (int): additional i2c-dev flags for this message.
 
             Returns:
                 Message: Message object.
