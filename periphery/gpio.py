@@ -11,7 +11,7 @@ class GPIO(object):
         the specified pin, with the specified direction.
 
         `direction` can be "in" for input; "out" for output, initialized to
-        low; "high" for output, initialized to high; and "low" for output,
+        low; "high" for output, initialized to high; "low" for output,
         initialized to low, or "preserve" for preserving existing direction.
         Default is "preserve".
 
@@ -209,7 +209,7 @@ class GPIO(object):
 
     @property
     def pin(self):
-        """Get the sysfs GPIO pin.
+        """Get the sysfs GPIO pin number.
 
         :type: int
         """
@@ -217,7 +217,7 @@ class GPIO(object):
 
     @property
     def supports_interrupts(self):
-        """Get whether or not this GPIO supports edge interrupts configurable
+        """Get whether or not this GPIO supports edge interrupts, configurable
         with the .edge property.
 
         :type: bool
