@@ -72,19 +72,19 @@ def test_loopback():
     # Test write/flush/read with bytes write
     assert serial.write(lorem_ipsum) == len(lorem_ipsum)
     serial.flush()
-    buf = serial.read(len(lorem_ipsum))
+    buf = serial.read(len(lorem_ipsum), timeout=3)
     assert buf == lorem_ipsum
 
     # Test write/flush/read with bytearray write
     assert serial.write(bytearray(lorem_ipsum)) == len(lorem_ipsum)
     serial.flush()
-    buf = serial.read(len(lorem_ipsum))
+    buf = serial.read(len(lorem_ipsum), timeout=3)
     assert buf == lorem_ipsum
 
     # Test write/flush/read with list write
     assert serial.write(list(bytearray(lorem_ipsum))) == len(lorem_ipsum)
     serial.flush()
-    buf = serial.read(len(lorem_ipsum))
+    buf = serial.read(len(lorem_ipsum), timeout=3)
     assert buf == lorem_ipsum
 
     # Test poll/write/flush/poll/input waiting/read
@@ -104,7 +104,7 @@ def test_loopback():
     lorem_hugesum = b"\xaa"*(4096*3)
     assert serial.write(lorem_hugesum) == len(lorem_hugesum)
     serial.flush()
-    buf = serial.read(len(lorem_hugesum))
+    buf = serial.read(len(lorem_hugesum), timeout=3)
     assert buf == lorem_hugesum
 
     # Test read timeout
