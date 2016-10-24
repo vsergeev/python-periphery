@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'python-periphery'
-copyright = u'2015, Ivan (Vanya) A. Sergeev'
+copyright = u'2015-2016, vsergeev / Ivan (Vanya) A. Sergeev'
 author = u'Vanya A. Sergeev'
 
 # The version info for the project you're documenting, acts as replacement for
