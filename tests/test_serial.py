@@ -70,24 +70,28 @@ def test_loopback():
     serial = periphery.Serial(serial_device, 115200)
 
     # Test write/flush/read with bytes write
+    print("Write, flush, read lorem ipsum with bytes type")
     assert serial.write(lorem_ipsum) == len(lorem_ipsum)
     serial.flush()
     buf = serial.read(len(lorem_ipsum), timeout=3)
     assert buf == lorem_ipsum
 
     # Test write/flush/read with bytearray write
+    print("Write, flush, read lorem ipsum with bytearray type")
     assert serial.write(bytearray(lorem_ipsum)) == len(lorem_ipsum)
     serial.flush()
     buf = serial.read(len(lorem_ipsum), timeout=3)
     assert buf == lorem_ipsum
 
     # Test write/flush/read with list write
+    print("Write, flush, read lorem ipsum with list type")
     assert serial.write(list(bytearray(lorem_ipsum))) == len(lorem_ipsum)
     serial.flush()
     buf = serial.read(len(lorem_ipsum), timeout=3)
     assert buf == lorem_ipsum
 
     # Test poll/write/flush/poll/input waiting/read
+    print("Write, flush, poll, input waiting, read lorem ipsum")
     assert serial.poll(0.5) == False
     assert serial.write(lorem_ipsum) == len(lorem_ipsum)
     serial.flush()
@@ -98,9 +102,11 @@ def test_loopback():
     assert buf == lorem_ipsum
 
     # Test non-blocking poll
+    print("Check non-blocking poll")
     assert serial.poll(0) == False
 
     # Test a very large read-write (likely to exceed internal buffer size (~4096))
+    print("Write, flush, read large buffer")
     lorem_hugesum = b"\xaa"*(4096*3)
     assert serial.write(lorem_hugesum) == len(lorem_hugesum)
     serial.flush()
@@ -108,17 +114,18 @@ def test_loopback():
     assert buf == lorem_hugesum
 
     # Test read timeout
+    print("Check read timeout")
     tic = time.time()
     assert serial.read(4096*3, timeout=2) == b""
     toc = time.time()
     assert (toc-tic) > 1
 
     # Test non-blocking read
+    print("Check non-blocking read")
     tic = time.time()
     assert serial.read(4096*3, timeout=0) == b""
     toc = time.time()
-    # Assuming we weren't context switched out for a second and weren't on
-    # a thin time boundary ;)
+    # Assuming we weren't context switched out for a second
     assert int(toc-tic) == 0
 
     serial.close()
