@@ -79,9 +79,8 @@ class MMIO(object):
             raise ValueError("Offset out of bounds.")
 
     def read32(self, offset):
-        """Read 32-bits from mapped physical memory, starting at the specified
-        `offset`, in bytes, relative to the base physical address the MMIO
-        object was opened with.
+        """Read 32-bits from the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
@@ -102,9 +101,8 @@ class MMIO(object):
         return struct.unpack("=L", self.mapping[offset:offset+4])[0]
 
     def read16(self, offset):
-        """Read 16-bits from mapped physical memory, starting at the specified
-        `offset`, in bytes, relative to the base physical address the MMIO
-        object was opened with.
+        """Read 16-bits from the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
@@ -125,9 +123,8 @@ class MMIO(object):
         return struct.unpack("=H", self.mapping[offset:offset+2])[0]
 
     def read8(self, offset):
-        """Read 8-bits from mapped physical memory, starting at the specified
-        `offset`, in bytes, relative to the base physical address the MMIO
-        object was opened with.
+        """Read 8-bits from the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
@@ -148,13 +145,12 @@ class MMIO(object):
         return struct.unpack("B", self.mapping[offset:offset+1])[0]
 
     def read(self, offset, length):
-        """Read an array of bytes from mapped physical memory, starting at the
-        specified `offset` in bytes, relative to the base physical address the
-        MMIO object was opened with.
+        """Read a string of bytes from the specified `offset` in bytes,
+        relative to the base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            length (int): number of bytes to read
+            length (int): number of bytes to read.
 
         Returns:
             bytes: bytes read.
@@ -172,13 +168,12 @@ class MMIO(object):
         return bytes(self.mapping[offset:offset+length])
 
     def write32(self, offset, value):
-        """Write 32-bits to mapped physical memory, starting at the specified
-        `offset`, in bytes, relative to the base physical address the MMIO
-        object was opened with.
+        """Write 32-bits to the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            value (int, long): 32-bit value to write
+            value (int, long): 32-bit value to write.
 
         Raises:
             TypeError: if `offset` or `value` type are invalid.
@@ -197,13 +192,12 @@ class MMIO(object):
         self.mapping[offset:offset+4] = struct.pack("=L", value)
 
     def write16(self, offset, value):
-        """Write 16-bits to mapped physical memory, starting at the specified
-        `offset`, in bytes, relative to the base physical address the MMIO
-        object was opened with.
+        """Write 16-bits to the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            value (int, long): 16-bit value to write
+            value (int, long): 16-bit value to write.
 
         Raises:
             TypeError: if `offset` or `value` type are invalid.
@@ -222,13 +216,12 @@ class MMIO(object):
         self.mapping[offset:offset+2] = struct.pack("=H", value)
 
     def write8(self, offset, value):
-        """Write 8-bits to mapped physical memory, starting at the specified
-        `offset`, in bytes, relative to the base physical address the MMIO
-        object was opened with.
+        """Write 8-bits to the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            value (int, long): 8-bit value to write
+            value (int, long): 8-bit value to write.
 
         Raises:
             TypeError: if `offset` or `value` type are invalid.
@@ -247,13 +240,13 @@ class MMIO(object):
         self.mapping[offset:offset+1] = struct.pack("B", value)
 
     def write(self, offset, data):
-        """Write an array of bytes to mapped physical memory, starting at the
-        specified `offset`, in bytes, relative to the base physical address the
-        MMIO object was opened with.
+        """Write a string of bytes to the specified `offset` in bytes, relative
+        to the base physical address of the MMIO region.
 
         Args:
             offset (int, long): offset from base physical address, in bytes.
-            data (bytes, bytearray, list): a byte array or list of 8-bit integers to write
+            data (bytes, bytearray, list): a byte array or list of 8-bit
+                                           integers to write.
 
         Raises:
             TypeError: if `offset` or `data` type are invalid.
@@ -285,7 +278,7 @@ class MMIO(object):
 
     @property
     def base(self):
-        """Get the base physical address the MMIO object was opened with.
+        """Get the base physical address of the MMIO region.
 
         :type: int
         """
@@ -293,7 +286,7 @@ class MMIO(object):
 
     @property
     def size(self):
-        """Get the mapping size the MMIO object was opened with.
+        """Get the mapping size of the MMIO region.
 
         :type: int
         """
