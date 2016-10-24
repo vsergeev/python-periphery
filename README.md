@@ -10,19 +10,19 @@ Using Lua or C? Check out the [lua-periphery](https://github.com/vsergeev/lua-pe
 
 With pip:
 ``` text
-$ pip install python-periphery
+pip install python-periphery
 ```
 
 With easy_install:
 ``` text
-$ easy_install python-periphery
+easy_install python-periphery
 ```
 
 With setup.py:
 ``` text
-$ git clone https://github.com/vsergeev/python-periphery.git
-$ cd python-periphery
-$ python setup.py install
+git clone https://github.com/vsergeev/python-periphery.git
+cd python-periphery
+python setup.py install
 ```
 
 ## Examples
@@ -185,8 +185,8 @@ Documentation is hosted at [http://python-periphery.readthedocs.org/](http://pyt
 To build documentation locally with Sphinx, run:
 
 ```
-$ cd docs
-$ make html
+cd docs
+make html
 ```
 
 Sphinx will produce the HTML documentation in `docs/_build/html/`.
