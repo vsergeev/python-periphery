@@ -1,5 +1,7 @@
 import os
 import select
+import time
+
 
 class GPIOError(IOError):
     """Base class for GPIO errors."""
@@ -7,6 +9,11 @@ class GPIOError(IOError):
 
 
 class GPIO(object):
+    # Number of retries to check for successful GPIO export
+    GPIO_EXPORT_STAT_RETRIES = 10
+    # Delay between check for GPIO export (100ms)
+    GPIO_EXPORT_STAT_DELAY = 0.1
+
     def __init__(self, pin, direction="preserve"):
         """Instantiate a GPIO object and open the sysfs GPIO corresponding to
         the specified pin, with the specified direction.
@@ -28,6 +35,7 @@ class GPIO(object):
             GPIOError: if an I/O or OS error occurs.
             TypeError: if `pin` or `direction`  types are invalid.
             ValueError: if `direction` value is invalid.
+            TimeoutError: if waiting for GPIO export times out.
 
         """
         self._fd = None
@@ -60,6 +68,18 @@ class GPIO(object):
                     f_export.write("%d\n" % pin)
             except IOError as e:
                 raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
+
+            # Loop until GPIO is exported
+            exported = False
+            for i in range(GPIO.GPIO_EXPORT_STAT_RETRIES):
+                if os.path.isdir(gpio_path):
+                    exported = True
+                    break
+
+                time.sleep(GPIO.GPIO_EXPORT_STAT_DELAY)
+
+            if not exported:
+                raise TimeoutError("Exporting GPIO: waiting for '%s' timed out" % gpio_path)
 
         # Write direction, if it's not to be preserved
         direction = direction.lower()
