@@ -1,8 +1,10 @@
 import os
 
+
 class LEDError(IOError):
     """Base class for LED errors."""
     pass
+
 
 class LED(object):
     def __init__(self, name, brightness=None):
