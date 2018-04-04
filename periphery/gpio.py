@@ -5,6 +5,7 @@ class GPIOError(IOError):
     """Base class for GPIO errors."""
     pass
 
+
 class GPIO(object):
     def __init__(self, pin, direction="preserve"):
         """Instantiate a GPIO object and open the sysfs GPIO corresponding to
@@ -76,7 +77,6 @@ class GPIO(object):
             raise GPIOError(e.errno, "Opening GPIO: " + e.strerror)
 
         self._pin = pin
-
 
     # Methods
 
@@ -306,4 +306,3 @@ class GPIO(object):
             return "GPIO %d (fd=%d, direction=%s, supports interrupts, edge=%s)" % (self._pin, self._fd, self.direction, self.edge)
 
         return "GPIO %d (fd=%d, direction=%s, no interrupts)" % (self._pin, self._fd, self.direction)
-
