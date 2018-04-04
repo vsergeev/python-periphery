@@ -3,9 +3,11 @@ import fcntl
 import array
 import ctypes
 
+
 class SPIError(IOError):
     """Base class for SPI errors."""
     pass
+
 
 class _CSpiIocTransfer(ctypes.Structure):
     _fields_ = [
@@ -21,18 +23,19 @@ class _CSpiIocTransfer(ctypes.Structure):
         ('pad', ctypes.c_ushort),
     ]
 
+
 class SPI(object):
     # Constants scraped from <linux/spi/spidev.h>
-    _SPI_CPHA        = 0x1
-    _SPI_CPOL        = 0x2
-    _SPI_LSB_FIRST   = 0x8
-    _SPI_IOC_WR_MODE            = 0x40016b01
-    _SPI_IOC_RD_MODE            = 0x80016b01
-    _SPI_IOC_WR_MAX_SPEED_HZ    = 0x40046b04
-    _SPI_IOC_RD_MAX_SPEED_HZ    = 0x80046b04
-    _SPI_IOC_WR_BITS_PER_WORD   = 0x40016b03
-    _SPI_IOC_RD_BITS_PER_WORD   = 0x80016b03
-    _SPI_IOC_MESSAGE_1          = 0x40206b00
+    _SPI_CPHA = 0x1
+    _SPI_CPOL = 0x2
+    _SPI_LSB_FIRST = 0x8
+    _SPI_IOC_WR_MODE = 0x40016b01
+    _SPI_IOC_RD_MODE = 0x80016b01
+    _SPI_IOC_WR_MAX_SPEED_HZ = 0x40046b04
+    _SPI_IOC_RD_MAX_SPEED_HZ = 0x80046b04
+    _SPI_IOC_WR_BITS_PER_WORD = 0x40016b03
+    _SPI_IOC_RD_BITS_PER_WORD = 0x80016b03
+    _SPI_IOC_MESSAGE_1 = 0x40206b00
 
     def __init__(self, devpath, mode, max_speed, bit_order="msb", bits_per_word=8, extra_flags=0):
         """Instantiate a SPI object and open the spidev device at the specified
@@ -414,4 +417,3 @@ class SPI(object):
 
     def __str__(self):
         return "SPI (device=%s, fd=%d, mode=%s, max_speed=%d, bit_order=%s, bits_per_word=%d, extra_flags=0x%02x)" % (self.devpath, self.fd, self.mode, self.max_speed, self.bit_order, self.bits_per_word, self.extra_flags)
-
