@@ -1,8 +1,10 @@
 import os
 
+
 class PWMError(IOError):
     """Base class for PWM errors."""
     pass
+
 
 class PWM(object):
     # Sysfs paths
