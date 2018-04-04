@@ -4,9 +4,11 @@ import array
 import termios
 import select
 
+
 class SerialError(IOError):
     """Base class for Serial errors."""
     pass
+
 
 class Serial(object):
     _DATABITS_TO_CFLAG = {
@@ -101,9 +103,10 @@ class Serial(object):
 
         parity = parity.lower()
 
-        (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = (0, 0, 0, 0, 0, 0, [0]*32)
+        (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = (0, 0, 0, 0, 0, 0, [0] * 32)
 
-        ### iflag
+        ###
+        # iflag
 
         # Ignore break characters
         iflag = termios.IGNBRK
@@ -116,13 +119,16 @@ class Serial(object):
         if xonxoff:
             iflag |= (termios.IXON | termios.IXOFF)
 
-        ### oflag
+        #######
+        # oflag
         oflag = 0
 
-        ### lflag
+        #######
+        # lflag
         lflag = 0
 
-        ### cflag
+        #######
+        # cflag
 
         # Enable receiver, ignore modem control lines
         cflag = (termios.CREAD | termios.CLOCAL)
@@ -147,10 +153,12 @@ class Serial(object):
         # Setup baud rate
         cflag |= Serial._BAUDRATE_TO_OSPEED[baudrate]
 
-        ### ispeed
+        ########
+        # ispeed
         ispeed = Serial._BAUDRATE_TO_OSPEED[baudrate]
 
-        ### ospeed
+        ########
+        # ospeed
         ospeed = Serial._BAUDRATE_TO_OSPEED[baudrate]
 
         # Set tty attributes
@@ -198,7 +206,7 @@ class Serial(object):
                     break
 
             try:
-                data += os.read(self._fd, length-len(data))
+                data += os.read(self._fd, length - len(data))
             except OSError as e:
                 raise SerialError(e.errno, "Reading serial port: " + e.strerror)
 
@@ -250,7 +258,7 @@ class Serial(object):
         """
         p = select.poll()
         p.register(self._fd, select.POLLIN | select.POLLPRI)
-        events = p.poll(int(timeout*1000))
+        events = p.poll(int(timeout * 1000))
 
         if len(events) > 0:
             return True
@@ -412,7 +420,6 @@ class Serial(object):
             raise TypeError("Invalid data bits type, should be integer.")
         elif databits not in [5, 6, 7, 8]:
             raise ValueError("Invalid data bits, can be 5, 6, 7, 8.")
-
 
         # Get tty attributes
         try:
@@ -631,4 +638,3 @@ class Serial(object):
 
     def __str__(self):
         return "Serial (device=%s, fd=%d, baudrate=%d, databits=%d, parity=%s, stopbits=%d, xonxoff=%s, rtscts=%s)" % (self.devpath, self.fd, self.baudrate, self.databits, self.parity, self.stopbits, str(self.xonxoff), str(self.rtscts))
-
