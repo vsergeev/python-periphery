@@ -1,3 +1,6 @@
+* v1.1.1 - 04/03/2018
+    * Fix handling of delayed pin directory export when opening a GPIO.
+
 * v1.1.0 - 10/24/2016
     * Add support for preserving pin direction when opening GPIO.
     * Improve GPIO poll() implementation to work with more platforms.
