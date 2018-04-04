@@ -3,9 +3,11 @@ import ctypes
 import array
 import fcntl
 
+
 class I2CError(IOError):
     """Base class for I2C errors."""
     pass
+
 
 class _CI2CMessage(ctypes.Structure):
     _fields_ = [
@@ -15,25 +17,27 @@ class _CI2CMessage(ctypes.Structure):
         ("buf", ctypes.POINTER(ctypes.c_ubyte)),
     ]
 
+
 class _CI2CIocTransfer(ctypes.Structure):
     _fields_ = [
         ("msgs", ctypes.POINTER(_CI2CMessage)),
         ("nmsgs", ctypes.c_uint),
     ]
 
+
 class I2C(object):
     # Constants scraped from <linux/i2c-dev.h> and <linux/i2c.h>
-    _I2C_IOC_FUNCS      = 0x705
-    _I2C_IOC_RDWR       = 0x707
-    _I2C_FUNC_I2C       = 0x1
-    _I2C_M_TEN          = 0x0010
-    _I2C_M_RD           = 0x0001
-    _I2C_M_STOP         = 0x8000
-    _I2C_M_NOSTART      = 0x4000
+    _I2C_IOC_FUNCS = 0x705
+    _I2C_IOC_RDWR = 0x707
+    _I2C_FUNC_I2C = 0x1
+    _I2C_M_TEN = 0x0010
+    _I2C_M_RD = 0x0001
+    _I2C_M_STOP = 0x8000
+    _I2C_M_NOSTART = 0x4000
     _I2C_M_REV_DIR_ADDR = 0x2000
-    _I2C_M_IGNORE_NAK   = 0x1000
-    _I2C_M_NO_RD_ACK    = 0x0800
-    _I2C_M_RECV_LEN     = 0x0400
+    _I2C_M_IGNORE_NAK = 0x1000
+    _I2C_M_NO_RD_ACK = 0x0800
+    _I2C_M_RECV_LEN = 0x0400
 
     def __init__(self, devpath):
         """Instantiate an I2C object and open the i2c-dev device at the
@@ -212,4 +216,3 @@ class I2C(object):
             self.data = data
             self.read = read
             self.flags = flags
-
