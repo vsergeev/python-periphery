@@ -9,6 +9,7 @@ i2c_devpath1 = None
 i2c_devpath2 = None
 i2c_eeprom_addr = None
 
+
 def test_arguments():
     print("Starting arguments test...")
 
@@ -17,6 +18,7 @@ def test_arguments():
         periphery.I2C(123)
 
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -33,6 +35,7 @@ def test_open_close():
     i2c.close()
 
     print("Open/close test passed.")
+
 
 def test_loopback():
     print("Starting loopback test...")
@@ -74,6 +77,7 @@ def test_loopback():
 
     print("Loopback test passed.")
 
+
 def test_interactive():
     print("Starting interactive test...")
 
@@ -105,6 +109,7 @@ def test_interactive():
 
     print("Interactive test passed.")
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 4:
         print("Usage: python -m tests.test_i2c <i2c device 1> <i2c device 2> <i2c eeprom address>")
@@ -130,4 +135,3 @@ if __name__ == "__main__":
     test_interactive()
 
     print("All I2C tests passed.")
-

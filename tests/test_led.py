@@ -7,6 +7,7 @@ if sys.version_info[0] == 3:
 
 led_name = None
 
+
 def test_arguments():
     print("Starting arguments test...")
 
@@ -17,6 +18,7 @@ def test_arguments():
         periphery.LED(100, 100)
 
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -59,6 +61,7 @@ def test_open_close():
 
     print("Open/close test passed.")
 
+
 def test_interactive():
     print("Starting interactive test...")
 
@@ -81,6 +84,7 @@ def test_interactive():
     led.close()
 
     print("Interactive test passed.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

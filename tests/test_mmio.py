@@ -6,18 +6,20 @@ from .asserts import AssertRaises
 if sys.version_info[0] == 3:
     raw_input = input
 
-PAGE_SIZE               = 4096
-CONTROL_MODULE_BASE     = 0x44e10000
-USB_VID_PID_OFFSET      = 0x7f4
-USB_VID_PID             = 0x04516141
-RTCSS_BASE              = 0x44e3e000
+PAGE_SIZE = 4096
+CONTROL_MODULE_BASE = 0x44e10000
+USB_VID_PID_OFFSET = 0x7f4
+USB_VID_PID = 0x04516141
+RTCSS_BASE = 0x44e3e000
 RTC_SCRATCH2_REG_OFFSET = 0x68
-RTC_KICK0R_REG_OFFSET   = 0x6C
-RTC_KICK1R_REG_OFFSET   = 0x70
+RTC_KICK0R_REG_OFFSET = 0x6C
+RTC_KICK1R_REG_OFFSET = 0x70
+
 
 def test_arguments():
     print("Starting arguments test...")
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -41,16 +43,17 @@ def test_open_close():
     assert mmio.size == PAGE_SIZE
     # Read out of bounds
     with AssertRaises(ValueError):
-        mmio.read32(PAGE_SIZE-3)
+        mmio.read32(PAGE_SIZE - 3)
     with AssertRaises(ValueError):
-        mmio.read32(PAGE_SIZE-2)
+        mmio.read32(PAGE_SIZE - 2)
     with AssertRaises(ValueError):
-        mmio.read32(PAGE_SIZE-1)
+        mmio.read32(PAGE_SIZE - 1)
     with AssertRaises(ValueError):
         mmio.read32(PAGE_SIZE)
     mmio.close()
 
     print("Open/close test passed.")
+
 
 def test_loopback():
     print("Starting loopback test...")
@@ -108,6 +111,7 @@ def test_loopback():
 
     print("Loopback test passed.")
 
+
 def test_interactive():
     print("Starting interactive test...")
 
@@ -126,14 +130,14 @@ def test_interactive():
     tic = time.time()
     rtc_tic = mmio.read32(0x00) & 0xf
 
-    bcd2dec = lambda x: 10*((x >> 4) & 0xf) + (x & 0xf)
+    bcd2dec = lambda x: 10 * ((x >> 4) & 0xf) + (x & 0xf)
 
-    print("Date: %04d-%02d-%02d" % (2000+bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
+    print("Date: %04d-%02d-%02d" % (2000 + bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
     print("Time: %02d:%02d:%02d" % (bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
 
     periphery.sleep(3)
 
-    print("Date: %04d-%02d-%02d" % (2000+bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
+    print("Date: %04d-%02d-%02d" % (2000 + bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
     print("Time: %02d:%02d:%02d" % (bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
 
     toc = time.time()
@@ -145,6 +149,7 @@ def test_interactive():
     mmio.close()
 
     print("Interactive test passed.")
+
 
 if __name__ == "__main__":
     print("WARNING: This test suite assumes a BeagleBone Black (AM335x) host!")
@@ -159,4 +164,3 @@ if __name__ == "__main__":
     test_interactive()
 
     print("All MMIO tests passed.")
-

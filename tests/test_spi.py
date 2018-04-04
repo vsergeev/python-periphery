@@ -7,6 +7,7 @@ if sys.version_info[0] == 3:
 
 spi_device = None
 
+
 def test_arguments():
     print("Starting arguments test...")
 
@@ -18,6 +19,7 @@ def test_arguments():
         periphery.SPI(spi_device, 4, int(1e6), bit_order="blah")
 
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -60,13 +62,14 @@ def test_open_close():
 
     print("Open/close test passed.")
 
+
 def test_loopback():
     print("Starting loopback test...")
 
     spi = periphery.SPI(spi_device, 0, 100000)
 
     # Try list transfer
-    buf_in = list(range(256))*4
+    buf_in = list(range(256)) * 4
     buf_out = spi.transfer(buf_in)
     assert buf_out == buf_in
 
@@ -83,6 +86,7 @@ def test_loopback():
     spi.close()
 
     print("Loopback test passed.")
+
 
 def test_interactive():
     print("Starting interactive test...")
@@ -139,6 +143,7 @@ def test_interactive():
 
     print("Interactive test passed.")
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python -m tests.test_spi <spi device>")
@@ -162,4 +167,3 @@ if __name__ == "__main__":
     test_interactive()
 
     print("All SPI tests passed.")
-

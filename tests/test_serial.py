@@ -8,6 +8,7 @@ if sys.version_info[0] == 3:
 
 serial_device = None
 
+
 def test_arguments():
     print("Starting arguments test...")
 
@@ -28,6 +29,7 @@ def test_arguments():
     # Everything else is fair game, although termios might not like it.
 
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -61,6 +63,7 @@ def test_open_close():
     serial.close()
 
     print("Open/close test passed.")
+
 
 def test_loopback():
     print("Starting loopback test...")
@@ -107,7 +110,7 @@ def test_loopback():
 
     # Test a very large read-write (likely to exceed internal buffer size (~4096))
     print("Write, flush, read large buffer")
-    lorem_hugesum = b"\xaa"*(4096*3)
+    lorem_hugesum = b"\xaa" * (4096 * 3)
     assert serial.write(lorem_hugesum) == len(lorem_hugesum)
     serial.flush()
     buf = serial.read(len(lorem_hugesum), timeout=3)
@@ -116,21 +119,22 @@ def test_loopback():
     # Test read timeout
     print("Check read timeout")
     tic = time.time()
-    assert serial.read(4096*3, timeout=2) == b""
+    assert serial.read(4096 * 3, timeout=2) == b""
     toc = time.time()
-    assert (toc-tic) > 1
+    assert (toc - tic) > 1
 
     # Test non-blocking read
     print("Check non-blocking read")
     tic = time.time()
-    assert serial.read(4096*3, timeout=0) == b""
+    assert serial.read(4096 * 3, timeout=0) == b""
     toc = time.time()
     # Assuming we weren't context switched out for a second
-    assert int(toc-tic) == 0
+    assert int(toc - tic) == 0
 
     serial.close()
 
     print("Loopback test passed.")
+
 
 def test_interactive():
     print("Starting interactive test...")
@@ -161,6 +165,7 @@ def test_interactive():
 
     print("Interactive test passed.")
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python -m tests.test_serial <serial device>")
@@ -183,4 +188,3 @@ if __name__ == "__main__":
     test_interactive()
 
     print("All Serial tests passed.")
-

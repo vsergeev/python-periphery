@@ -14,6 +14,7 @@ else:
 pin_input = None
 pin_output = None
 
+
 def test_arguments():
     print("Starting arguments test...")
 
@@ -27,6 +28,7 @@ def test_arguments():
         periphery.GPIO(100, "blah")
 
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -98,6 +100,7 @@ def test_open_close():
 
     print("Open/close test passed.")
 
+
 def test_loopback():
     print("Starting loopback test...")
 
@@ -118,8 +121,10 @@ def test_loopback():
     # Wrapper for running poll() in a thread
     def threaded_poll(gpio, timeout):
         ret = queue.Queue()
+
         def f():
             ret.put(gpio.poll(timeout))
+
         thread = threading.Thread(target=f)
         thread.start()
         return ret
@@ -181,6 +186,7 @@ def test_loopback():
 
     print("Loopback test passed.")
 
+
 def test_interactive():
     print("Starting interactive test...")
 
@@ -204,6 +210,7 @@ def test_interactive():
     gpio.close()
 
     print("Interactive test passed.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:

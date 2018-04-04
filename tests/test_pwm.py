@@ -8,6 +8,7 @@ if sys.version_info[0] == 3:
 pwm_channel = None
 pwm_pin = None
 
+
 def test_arguments():
     print("Starting arguments test...")
 
@@ -18,6 +19,7 @@ def test_arguments():
         periphery.PWM(0, "foo")
 
     print("Arguments test passed.")
+
 
 def test_open_close():
     print("Starting open/close test...")
@@ -80,6 +82,7 @@ def test_open_close():
 
     print("Open/close test passed.")
 
+
 def test_interactive():
     print("Starting interactive test...")
 
@@ -120,6 +123,7 @@ def test_interactive():
     pwm.close()
 
     print("Interactive test passed.")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
