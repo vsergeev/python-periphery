@@ -4,13 +4,16 @@ import mmap
 import ctypes
 import struct
 
+
 # Alias long to int on Python 3
 if sys.version_info[0] >= 3:
     long = int
 
+
 class MMIOError(IOError):
     """Base class for MMIO errors."""
     pass
+
 
 class MMIO(object):
     def __init__(self, physaddr, size):
@@ -75,7 +78,7 @@ class MMIO(object):
         return offset + (self._physaddr - self._aligned_physaddr)
 
     def _validate_offset(self, offset, length):
-        if (offset+length) > self._aligned_size:
+        if (offset + length) > self._aligned_size:
             raise ValueError("Offset out of bounds.")
 
     def read32(self, offset):
@@ -98,7 +101,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
-        return struct.unpack("=L", self.mapping[offset:offset+4])[0]
+        return struct.unpack("=L", self.mapping[offset:offset + 4])[0]
 
     def read16(self, offset):
         """Read 16-bits from the specified `offset` in bytes, relative to the
@@ -120,7 +123,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
-        return struct.unpack("=H", self.mapping[offset:offset+2])[0]
+        return struct.unpack("=H", self.mapping[offset:offset + 2])[0]
 
     def read8(self, offset):
         """Read 8-bits from the specified `offset` in bytes, relative to the
@@ -142,7 +145,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
-        return struct.unpack("B", self.mapping[offset:offset+1])[0]
+        return struct.unpack("B", self.mapping[offset:offset + 1])[0]
 
     def read(self, offset, length):
         """Read a string of bytes from the specified `offset` in bytes,
@@ -165,7 +168,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, length)
-        return bytes(self.mapping[offset:offset+length])
+        return bytes(self.mapping[offset:offset + length])
 
     def write32(self, offset, value):
         """Write 32-bits to the specified `offset` in bytes, relative to the
@@ -189,7 +192,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
-        self.mapping[offset:offset+4] = struct.pack("=L", value)
+        self.mapping[offset:offset + 4] = struct.pack("=L", value)
 
     def write16(self, offset, value):
         """Write 16-bits to the specified `offset` in bytes, relative to the
@@ -213,7 +216,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
-        self.mapping[offset:offset+2] = struct.pack("=H", value)
+        self.mapping[offset:offset + 2] = struct.pack("=H", value)
 
     def write8(self, offset, value):
         """Write 8-bits to the specified `offset` in bytes, relative to the
@@ -237,7 +240,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
-        self.mapping[offset:offset+1] = struct.pack("B", value)
+        self.mapping[offset:offset + 1] = struct.pack("B", value)
 
     def write(self, offset, data):
         """Write a string of bytes to the specified `offset` in bytes, relative
@@ -262,7 +265,7 @@ class MMIO(object):
         self._validate_offset(offset, len(data))
 
         data = bytes(bytearray(data))
-        self.mapping[offset:offset+len(data)] = data
+        self.mapping[offset:offset + len(data)] = data
 
     def close(self):
         """Unmap the MMIO object's mapped physical memory."""
