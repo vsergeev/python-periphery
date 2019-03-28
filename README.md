@@ -73,8 +73,11 @@ led1.close()
 ``` python
 from periphery import PWM
 
-# Open PWM channel 0, pin 10
-pwm = PWM(0, 10)
+# Open PWM(pin,channel) PWM pin 1, channel 0   
+# You can figure out the pin number by run  'ls /sys/class/pwm' list of pwmchip# - # will be the pin number
+# You can figure out how many channel are supported for the pin 
+# by run 'cat /sys/class/pwm/pwmchip0/npwm' - pwmchip0 as example
+pwm = PWM(1, 0)
 
 # Set frequency to 1 kHz
 pwm.frequency = 1e3
