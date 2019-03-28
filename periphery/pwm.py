@@ -84,8 +84,8 @@ class PWM(object):
     def _write_pin_attr(self, attr, value):
         path = os.path.join(
             self._sysfs_path,
-            self._pin_path.format(self._channel),
-            self._channel_path.format(self._pin),
+            self._pin_path.format(self._pin),
+            self._channel_path.format(self._channel),
             attr)
 
         with open(path, 'w') as f_attr:
@@ -94,8 +94,8 @@ class PWM(object):
     def _read_pin_attr(self, attr):
         path = os.path.join(
             self._sysfs_path,
-            self._pin_path.format(self._channel),
-            self._channel_path.format(self._pin),
+            self._pin_path.format(self._pin),
+            self._channel_path.format(self._channel),
             attr)
 
         with open(path, 'r') as f_attr:
