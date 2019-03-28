@@ -58,11 +58,11 @@ class PWM(object):
         if not isinstance(pin, int):
             raise TypeError("Invalid pin type, should be integer.")
 
-        channel_path = os.path.join(self._sysfs_path, self._channel_path.format(pin))
+        channel_path = os.path.join(self._sysfs_path, self._channel_path.format(channel))
         if not os.path.isdir(channel_path):
             raise ValueError("PWM channel does not exist, check that the required modules are loaded.")
 
-        pin_path = os.path.join(channel_path, self._pin_path.format(channel))
+        pin_path = os.path.join(channel_path, self._pin_path.format(pin))
         if not os.path.isdir(pin_path):
             try:
                 with open(os.path.join(channel_path, self._export_path), "w") as f_export:
