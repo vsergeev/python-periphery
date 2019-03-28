@@ -9,11 +9,11 @@ class PWMError(IOError):
 class PWM(object):
     # Sysfs paths
     _sysfs_path = "/sys/class/pwm/"
-    _channel_path = "pwmchip{}"
+    _pin_path = "pwmchip{}"
 
     # Channel paths
     _export_path = "export"
-    _pin_path = "pwm{}"
+    _channel_path = "pwm{}"
 
     # Pin attribute paths
     _pin_period_path = "period"
@@ -21,7 +21,7 @@ class PWM(object):
     _pin_polarity_path = "polarity"
     _pin_enable_path = "enable"
 
-    def __init__(self, channel, pin):
+    def __init__(self, channel=0, pin=0):
         """Instantiate a PWM object and open the sysfs PWM corresponding to the
         specified channel and pin.
 
@@ -58,11 +58,11 @@ class PWM(object):
         if not isinstance(pin, int):
             raise TypeError("Invalid pin type, should be integer.")
 
-        channel_path = os.path.join(self._sysfs_path, self._channel_path.format(channel))
+        channel_path = os.path.join(self._sysfs_path, self._pin_path.format(pin))
         if not os.path.isdir(channel_path):
             raise ValueError("PWM channel does not exist, check that the required modules are loaded.")
 
-        pin_path = os.path.join(channel_path, self._pin_path.format(pin))
+        pin_path = os.path.join(channel_path, self._channel_path.format(channel))
         if not os.path.isdir(pin_path):
             try:
                 with open(os.path.join(channel_path, self._export_path), "w") as f_export:
@@ -84,8 +84,8 @@ class PWM(object):
     def _write_pin_attr(self, attr, value):
         path = os.path.join(
             self._sysfs_path,
-            self._channel_path.format(self._channel),
-            self._pin_path.format(self._pin),
+            self._pin_path.format(self._channel),
+            self._channel_path.format(self._pin),
             attr)
 
         with open(path, 'w') as f_attr:
@@ -94,8 +94,8 @@ class PWM(object):
     def _read_pin_attr(self, attr):
         path = os.path.join(
             self._sysfs_path,
-            self._channel_path.format(self._channel),
-            self._pin_path.format(self._pin),
+            self._pin_path.format(self._channel),
+            self._channel_path.format(self._pin),
             attr)
 
         with open(path, 'r') as f_attr:
