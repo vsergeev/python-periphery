@@ -4,3 +4,4 @@ docs/_build/
 build/
 dist/
 python_periphery.egg-info/
+.id
