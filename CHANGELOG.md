@@ -1,3 +1,6 @@
+* v1.1.2 - 06/25/2019
+    * Add LICENSE file to packaging.
+
 * v1.1.1 - 04/03/2018
     * Fix handling of delayed pin directory export when opening a GPIO.
 
