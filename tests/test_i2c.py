@@ -5,9 +5,7 @@ from .asserts import AssertRaises
 if sys.version_info[0] == 3:
     raw_input = input
 
-i2c_devpath1 = None
-i2c_devpath2 = None
-i2c_eeprom_addr = None
+i2c_devpath = None
 
 
 def test_arguments():
@@ -28,7 +26,7 @@ def test_open_close():
         periphery.I2C("/foo/bar")
 
     # Open legitimate device
-    i2c = periphery.I2C(i2c_devpath1)
+    i2c = periphery.I2C(i2c_devpath)
     assert i2c.fd > 0
 
     # Close I2C
@@ -40,40 +38,7 @@ def test_open_close():
 def test_loopback():
     print("Starting loopback test...")
 
-    # "Loopback" plan
-    # 1. Read EEPROM via sysfs
-    # 2. Read EEPROM via I2C
-    # 3. Compare data
-
-    # Read EEPROM via sysfs
-    sysfs_path = "/sys/bus/i2c/devices/%s-00%02x/eeprom" % (i2c_devpath1[-1], i2c_eeprom_addr)
-    with open(sysfs_path, "rb") as f:
-        eeprom_data = f.read(256)
-
-    # Read EEPROM via I2C
-    data = bytearray()
-    i2c = periphery.I2C(i2c_devpath1)
-    for addr in range(0, 256):
-        msgs = [periphery.I2C.Message([0x00, addr]), periphery.I2C.Message([0x00], read=True)]
-        i2c.transfer(i2c_eeprom_addr, msgs)
-        data.append(msgs[1].data[0])
-
-    # Compare data
-    assert eeprom_data == data
-
-    # Try bytes read
-    msgs = [periphery.I2C.Message(b"\x00\x00"), periphery.I2C.Message(b"\x00", read=True)]
-    i2c.transfer(i2c_eeprom_addr, msgs)
-    assert isinstance(msgs[1].data, bytes)
-    assert bytearray(msgs[1].data)[0] == data[0]
-
-    # Try bytearray read
-    msgs = [periphery.I2C.Message(bytearray([0x00, 0x00])), periphery.I2C.Message(bytearray([0x00]), read=True)]
-    i2c.transfer(i2c_eeprom_addr, msgs)
-    assert isinstance(msgs[1].data, bytearray)
-    assert msgs[1].data[0] == data[0]
-
-    i2c.close()
+    print("No general way to do a loopback test for I2C without a real component, skipping...")
 
     print("Loopback test passed.")
 
@@ -82,7 +47,7 @@ def test_interactive():
     print("Starting interactive test...")
 
     # Open device 2
-    i2c = periphery.I2C(i2c_devpath2)
+    i2c = periphery.I2C(i2c_devpath)
 
     print("")
     print("Starting interactive test. Get out your logic analyzer, buddy!")
@@ -111,21 +76,17 @@ def test_interactive():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Usage: python -m tests.test_i2c <i2c device 1> <i2c device 2> <i2c eeprom address>")
+    if len(sys.argv) < 2:
+        print("Usage: python -m tests.test_i2c <i2c device>")
         print("")
-        print(" i2c device 1        i2c device path with EEPROM on bus")
-        print(" i2c device 2        i2c device path for observation with logic analyzer / oscilloscope")
-        print(" i2c eeprom address  address of EEPROM on i2c device 1 bus")
+        print(" i2c device          i2c device path for observation with an oscilloscope or logic analyzer")
         print("")
-        print("Hint: for BeagleBone Black, use onboard EEPROM on /dev/i2c-0 and")
+        print("Hint: for BeagleBone Black, use")
         print("I2C1 (SCL=P9.24, SDA=P9.26) on /dev/i2c-2, and run this test:")
-        print("    python -m tests.test_i2c /dev/i2c-0 /dev/i2c-2 0x50")
+        print("    python -m tests.test_i2c /dev/i2c-2")
         sys.exit(1)
 
-    i2c_devpath1 = sys.argv[1]
-    i2c_devpath2 = sys.argv[2]
-    i2c_eeprom_addr = int(sys.argv[3], 0)
+    i2c_devpath = sys.argv[1]
 
     print("Starting I2C tests...")
 
