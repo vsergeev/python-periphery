@@ -214,14 +214,18 @@ def test_interactive():
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python -m tests.test_gpio <gpio1> <gpio2>")
+        print("Usage: python -m tests.test_gpio <GPIO #1> <GPIO #2>")
         print("")
-        print("  gpio1      gpio #1 (connected in to gpio #2)")
-        print("  gpio2      gpio #2 (connected in to gpio #1)")
+        print("[1/4] Argument test: No requirements.")
+        print("[2/4] Open/close test: GPIO #2 should be real.")
+        print("[3/4] Loopback test: GPIOs #1 and #2 should be connected with a wire.")
+        print("[4/4] Interactive test: GPIO #2 should be observed with a multimeter.")
         print("")
-        print("Hint: for BeagleBone Black, connect a wire between")
-        print("GPIO 66 (P8.7) and GPIO 67 (P8.8), and then run this test:")
-        print("    python -m tests.test_gpio 66 67")
+        print("Hint: for Raspberry Pi 3,")
+        print("Use GPIO 17 (header pin 11) and GPIO 27 (header pin 13),")
+        print("connect a loopback between them, and run this test with:")
+        print("    python -m tests.test_gpio 17 27")
+        print("")
         sys.exit(1)
 
     pin_input = int(sys.argv[1])
