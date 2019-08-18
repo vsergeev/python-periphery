@@ -146,15 +146,20 @@ def test_interactive():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python -m tests.test_spi <spi device>")
+        print("Usage: python -m tests.test_spi <SPI device>")
         print("")
-        print("  spi device     spi device with MISO/MOSI loopback installed")
+        print("[1/4] Arguments test: No requirements.")
+        print("[2/4] Open/close test: SPI device should be real.")
+        print("[3/4] Loopback test: SPI MISO and MOSI should be connected with a wire.")
+        print("[4/4] Interactive test: SPI MOSI, CLK, CS should be observed with an oscilloscope or logic analyzer.")
         print("")
-        print("Hint: for BeagleBone Black, enable SPI1 (CS=P9.28, MOSI=P9.29,")
-        print("MISO=P9.30, CLK=P9.31) with:")
-        print("    echo BB-SPIDEV1 > /sys/devices/platform/bone_capemgr/slots")
-        print("connect a wire between MOSI and MISO, and then run this test:")
-        print("    python -m tests.test_spi /dev/spidev1.0")
+        print("Hint: for Raspberry Pi 3, enable SPI0 with:")
+        print("   $ echo \"dtparam=spi=on\" | sudo tee -a /boot/config.txt")
+        print("   $ sudo reboot")
+        print("Use pins SPI0 MOSI (header pin 19), SPI0 MISO (header pin 21), SPI0 SCLK (header pin 23),")
+        print("connect a loopback between MOSI and MISO, and run this test with:")
+        print("    python -m tests.test_spi /dev/spidev0.0")
+        print("")
         sys.exit(1)
 
     spi_device = sys.argv[1]
