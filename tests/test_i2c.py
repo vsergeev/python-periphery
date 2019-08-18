@@ -79,11 +79,18 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python -m tests.test_i2c <i2c device>")
         print("")
-        print(" i2c device          i2c device path for observation with an oscilloscope or logic analyzer")
+        print("[1/4] Arguments test: No requirements.")
+        print("[2/4] Open/close test: I2C device should be real.")
+        print("[3/4] Loopback test: No test.")
+        print("[4/4] Interactive test: I2C bus should be observed with an oscilloscope or logic analyzer.")
         print("")
-        print("Hint: for BeagleBone Black, use")
-        print("I2C1 (SCL=P9.24, SDA=P9.26) on /dev/i2c-2, and run this test:")
-        print("    python -m tests.test_i2c /dev/i2c-2")
+        print("Hint: for Raspberry Pi 3, enable I2C1 with:")
+        print("   $ echo \"dtparam=i2c_arm=on\" | sudo tee -a /boot/config.txt")
+        print("   $ sudo reboot")
+        print("Use pins I2C1 SDA (header pin 2) and I2C1 SCL (header pin 3),")
+        print("and run this test with:")
+        print("    python -m tests.test_i2c /dev/i2c-1")
+        print("")
         sys.exit(1)
 
     i2c_devpath = sys.argv[1]
