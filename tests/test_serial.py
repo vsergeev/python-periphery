@@ -168,14 +168,22 @@ def test_interactive():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python -m tests.test_serial <serial device>")
+        print("Usage: python -m tests.test_serial <serial port device>")
         print("")
-        print("  serial device  serial device with TX/RX loopback installed")
+        print("[1/4] Arguments test: No requirements.")
+        print("[2/4] Open/close test: Serial port device should be real.")
+        print("[3/4] Loopback test: Serial TX and RX should be connected with a wire.")
+        print("[4/4] Interactive test: Serial TX should be observed with an oscilloscope or logic analyzer.")
         print("")
-        print("Hint: for BeagleBone Black, enable UART4 (TX=P9.13, RX=P9.11) with")
-        print("    echo BB-UART4 > /sys/devices/platform/bone_capemgr/slots")
-        print("connect a wire between TX and RX, and then run this test:")
-        print("    python -m tests.test_serial /dev/ttyS4")
+        print("Hint: for Raspberry Pi 3, enable UART0 with:")
+        print("   $ echo \"dtoverlay=pi3-disable-bt\" | sudo tee -a /boot/config.txt")
+        print("   $ sudo systemctl disable hciuart")
+        print("   $ sudo reboot")
+        print("   (Note that this will disable Bluetooth)")
+        print("Use pins UART0 TXD (header pin 8) and UART0 RXD (header pin 10),")
+        print("connect a loopback between TXD and RXD, and run this test with:")
+        print("    python -m tests.test_serial /dev/AMA0")
+        print("")
         sys.exit(1)
 
     serial_device = sys.argv[1]
