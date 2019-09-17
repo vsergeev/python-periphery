@@ -63,7 +63,7 @@ class Serial(object):
         self.close()
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, t, value, traceback):
         self.close()
