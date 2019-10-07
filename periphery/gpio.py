@@ -176,7 +176,10 @@ class GPIO(object):
             TypeError: if `timeout` type is not None or int.
 
         """
-        if not isinstance(timeout, (int, float, type(None))):
+        if timeout is None:
+            timeout = -1
+
+        if not isinstance(timeout, (int, float)):
             raise TypeError("Invalid timeout type, should be integer, float, or None.")
 
         # Setup epoll
