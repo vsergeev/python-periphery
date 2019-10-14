@@ -88,11 +88,18 @@ def test_interactive():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python -m tests.test_led <led name>")
+        print("Usage: python -m tests.test_led <LED name>")
         print("")
-        print("Hint: for BeagleBone Black, use LED beaglebone:green:usr0,")
-        print("and run this test:")
-        print("    python -m tests.test_led beaglebone:green:usr0")
+        print("[1/4] Arguments test: No requirements.")
+        print("[2/4] Open/close test: LED should be real.")
+        print("[3/4] Loopback test: No test.")
+        print("[4/4] Interactive test: LED should be observed.")
+        print("")
+        print("Hint: for Raspberry Pi 3, disable triggers for led0:")
+        print("    $ echo none > /sys/class/leds/led0/trigger")
+        print("Observe led0 (green LED), and run this test:")
+        print("    python -m tests.test_led led0")
+        print("")
         sys.exit(1)
 
     led_name = sys.argv[1]
