@@ -127,12 +127,22 @@ def test_interactive():
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python -m tests.test_pwm <PMW channel> <PWM pin number>")
+        print("Usage: python -m tests.test_pwm <PWM channel> <PWM pin number>")
         print("")
-        print("Hint: for BeagleBone Black, enable PWM2 (A=P8.19, B=8.13) with")
-        print("    echo BB-PWM2 > /sys/devices/platform/bone_capemgr/slots")
-        print("monitor P8.19, and run this test:")
+        print("[1/4] Arguments test: No requirements.")
+        print("[2/4] Open/close test: PWM device should be real.")
+        print("[3/4] Loopback test: No test.")
+        print("[4/4] Interactive test: PWM channel should be observed with an oscilloscope or logic analyzer.")
+        print("")
+        print("Hint: for Raspberry Pi 3, enable PWM0 and PWM1 with:")
+        print("   $ echo \"dtoverlay=pwm-2chan,pin=18,func=2,pin2=13,func2=4\" | sudo tee -a /boot/config.txt")
+        print("   $ sudo reboot")
+        print("Monitor GPIO 18 (header pin 12), and run this test with:")
         print("    python -m tests.test_pwm 0 0")
+        print("or, monitor GPIO 13 (header pin 33), and run this test with:")
+        print("    python -m tests.test_pwm 0 1")
+        print("")
+
         sys.exit(1)
 
     pwm_channel = int(sys.argv[1])
