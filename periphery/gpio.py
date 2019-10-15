@@ -14,19 +14,18 @@ class GPIO(object):
     # Delay between check for GPIO export (100ms)
     GPIO_EXPORT_STAT_DELAY = 0.1
 
-    def __init__(self, pin, direction="preserve"):
+    def __init__(self, pin, direction):
         """Instantiate a GPIO object and open the sysfs GPIO corresponding to
         the specified pin, with the specified direction.
 
         `direction` can be "in" for input; "out" for output, initialized to
-        low; "high" for output, initialized to high; "low" for output,
-        initialized to low, or "preserve" for preserving existing direction.
-        Default is "preserve".
+        low; "high" for output, initialized to high; or "low" for output,
+        initialized to low.
 
         Args:
             pin (int): Linux pin number.
-            direction (str): pin direction, can be "in", "out", "high", "low",
-                             or "preserve".
+            direction (str): pin direction, can be "in", "out", "high", or
+                             "low",
 
         Returns:
             GPIO: GPIO object.
@@ -56,8 +55,8 @@ class GPIO(object):
             raise TypeError("Invalid pin type, should be integer.")
         if not isinstance(direction, str):
             raise TypeError("Invalid direction type, should be string.")
-        if direction.lower() not in ["in", "out", "high", "low", "preserve"]:
-            raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\", \"preserve\".")
+        if direction.lower() not in ["in", "out", "high", "low"]:
+            raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
 
         gpio_path = "/sys/class/gpio/gpio%d" % pin
 
@@ -81,14 +80,13 @@ class GPIO(object):
             if not exported:
                 raise TimeoutError("Exporting GPIO: waiting for '%s' timed out" % gpio_path)
 
-        # Write direction, if it's not to be preserved
+        # Write direction
         direction = direction.lower()
-        if direction != "preserve":
-            try:
-                with open("/sys/class/gpio/gpio%d/direction" % pin, "w") as f_direction:
-                    f_direction.write(direction + "\n")
-            except IOError as e:
-                raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
+        try:
+            with open("/sys/class/gpio/gpio%d/direction" % pin, "w") as f_direction:
+                f_direction.write(direction + "\n")
+        except IOError as e:
+            raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
         # Open value
         try:

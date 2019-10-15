@@ -87,18 +87,6 @@ def test_open_close():
 
     gpio.close()
 
-    # Open with preserved direction
-    gpio = periphery.GPIO(pin_output, "preserve")
-    assert gpio.direction == "in"
-    gpio.direction = "out"
-    gpio.close()
-
-    # Open with preserved direction, using default argument
-    gpio = periphery.GPIO(pin_output)
-    assert gpio.direction == "out"
-    gpio.direction = "in"
-    gpio.close()
-
     print("Open/close test passed.")
 
 
