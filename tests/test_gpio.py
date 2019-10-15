@@ -12,8 +12,8 @@ if sys.version_info[0] == 3:
 else:
     import Queue as queue
 
-pin_input = None
-pin_output = None
+line_input = None
+line_output = None
 
 
 def test_arguments():
@@ -39,9 +39,23 @@ def test_open_close():
         periphery.GPIO(9999, "in")
 
     # Open legitimate GPIO
-    gpio = periphery.GPIO(pin_output, "in")
-    assert gpio.pin == pin_output
-    assert gpio.fd > 0
+    gpio = periphery.GPIO(line_output, "in")
+    assert gpio.line == line_output
+    assert gpio.direction == "in"
+    assert gpio.fd >= 0
+
+    # Set invalid direction
+    with AssertRaises(ValueError):
+        gpio.direction = "blah"
+    # Set invalid edge
+    with AssertRaises(ValueError):
+        gpio.edge = "blah"
+    # Unsupported proprety
+    with AssertRaises(NotImplementedError):
+        _ = gpio.chip_fd
+    # Unsupported method
+    with AssertRaises(NotImplementedError):
+        gpio.read_event()
 
     # Set direction out, check direction out, check value low
     gpio.direction = "out"
@@ -55,19 +69,10 @@ def test_open_close():
     gpio.direction = "high"
     assert gpio.direction == "out"
     assert gpio.read() == True
+
     # Set direction in, check direction in
     gpio.direction = "in"
     assert gpio.direction == "in"
-
-    # Set invalid direction
-    with AssertRaises(ValueError):
-        gpio.direction = "blah"
-    # Set invalid edge
-    with AssertRaises(ValueError):
-        gpio.edge = "blah"
-
-    # Check interrupt edge support
-    assert gpio.supports_interrupts == True
 
     # Set edge none, check edge none
     gpio.edge = "none"
@@ -93,9 +98,9 @@ def test_open_close():
 def test_loopback():
     print("Starting loopback test...")
 
-    # Open in and out pins
-    gpio_in = periphery.GPIO(pin_input, "in")
-    gpio_out = periphery.GPIO(pin_output, "out")
+    # Open in and out lines
+    gpio_in = periphery.GPIO(line_input, "in")
+    gpio_out = periphery.GPIO(line_output, "out")
 
     # Drive out low, check in low
     print("Drive out low, check in low")
@@ -122,46 +127,35 @@ def test_loopback():
     print("Check poll falling 1 -> 0 interrupt")
     gpio_in.edge = "falling"
     poll_ret = threaded_poll(gpio_in, 5)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_out.write(False)
     assert poll_ret.get() == True
-    assert gpio_in.read() == False
-
-    # Check poll timeout on 0 -> 0
-    print("Check poll falling timeout on 0 -> 0")
-    poll_ret = threaded_poll(gpio_in, 2)
-    time.sleep(1)
-    gpio_out.write(False)
-    assert poll_ret.get() == False
     assert gpio_in.read() == False
 
     # Check poll rising 0 -> 1 interrupt
     print("Check poll rising 0 -> 1 interrupt")
     gpio_in.edge = "rising"
     poll_ret = threaded_poll(gpio_in, 5)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_out.write(True)
     assert poll_ret.get() == True
     assert gpio_in.read() == True
 
-    # Check poll timeout on 1 -> 1
-    print("Check poll rising timeout on 1 -> 1")
-    poll_ret = threaded_poll(gpio_in, 2)
-    time.sleep(1)
-    gpio_out.write(True)
-    assert poll_ret.get() == False
-    assert gpio_in.read() == True
-
-    # Check poll rising+falling interrupts
-    print("Check poll rising/falling interrupt")
+    # Set edge to both
     gpio_in.edge = "both"
+
+    # Check poll falling 1 -> 0 interrupt
+    print("Check poll falling 1 -> 0 interrupt")
     poll_ret = threaded_poll(gpio_in, 5)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_out.write(False)
     assert poll_ret.get() == True
     assert gpio_in.read() == False
+
+    # Check poll rising 0 -> 1 interrupt
+    print("Check poll rising 0 -> 1 interrupt")
     poll_ret = threaded_poll(gpio_in, 5)
-    time.sleep(1)
+    time.sleep(0.5)
     gpio_out.write(True)
     assert poll_ret.get() == True
     assert gpio_in.read() == True
@@ -179,10 +173,14 @@ def test_loopback():
 def test_interactive():
     print("Starting interactive test...")
 
-    gpio = periphery.GPIO(pin_output, "out")
+    gpio = periphery.GPIO(line_output, "out")
 
     print("Starting interactive test. Get out your multimeter, buddy!")
     raw_input("Press enter to continue...")
+
+    # Check tostring
+    print("GPIO description: {}".format(str(gpio)))
+    assert raw_input("GPIO description looks ok? y/n ") == "y"
 
     # Drive GPIO out low
     gpio.write(False)
@@ -221,8 +219,8 @@ if __name__ == "__main__":
         print("")
         sys.exit(1)
 
-    pin_input = int(sys.argv[1])
-    pin_output = int(sys.argv[2])
+    line_input = int(sys.argv[1])
+    line_output = int(sys.argv[2])
 
     print("Starting GPIO tests...")
 

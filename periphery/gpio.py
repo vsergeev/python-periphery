@@ -1,4 +1,6 @@
+import collections
 import os
+import os.path
 import select
 import time
 
@@ -8,38 +10,20 @@ class GPIOError(IOError):
     pass
 
 
-class GPIO(object):
-    # Number of retries to check for successful GPIO export
-    GPIO_EXPORT_STAT_RETRIES = 10
-    # Delay between check for GPIO export (100ms)
-    GPIO_EXPORT_STAT_DELAY = 0.1
-
-    def __init__(self, pin, direction):
-        """Instantiate a GPIO object and open the sysfs GPIO corresponding to
-        the specified pin, with the specified direction.
-
-        `direction` can be "in" for input; "out" for output, initialized to
-        low; "high" for output, initialized to high; or "low" for output,
-        initialized to low.
+class EdgeEvent(collections.namedtuple('EdgeEvent', ['edge', 'timestamp'])):
+    def __new__(cls, edge, timestamp):
+        """EdgeEvent containing the event edge and event time reported by Linux.
 
         Args:
-            pin (int): Linux pin number.
-            direction (str): pin direction, can be "in", "out", "high", or
-                             "low",
-
-        Returns:
-            GPIO: GPIO object.
-
-        Raises:
-            GPIOError: if an I/O or OS error occurs.
-            TypeError: if `pin` or `direction`  types are invalid.
-            ValueError: if `direction` value is invalid.
-            TimeoutError: if waiting for GPIO export times out.
-
+            edge (str): event edge, either "rising" or "falling".
+            timestamp (int): event time in nanoseconds.
         """
-        self._fd = None
-        self._pin = None
-        self._open(pin, direction)
+        return super(EdgeEvent, cls).__new__(cls, edge, timestamp)
+
+
+class GPIO(object):
+    def __new__(cls, *args):
+        return SysfsGPIO.__new__(cls, *args)
 
     def __del__(self):
         self.close()
@@ -49,52 +33,6 @@ class GPIO(object):
 
     def __exit__(self, t, value, traceback):
         self.close()
-
-    def _open(self, pin, direction):
-        if not isinstance(pin, int):
-            raise TypeError("Invalid pin type, should be integer.")
-        if not isinstance(direction, str):
-            raise TypeError("Invalid direction type, should be string.")
-        if direction.lower() not in ["in", "out", "high", "low"]:
-            raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
-
-        gpio_path = "/sys/class/gpio/gpio%d" % pin
-
-        if not os.path.isdir(gpio_path):
-            # Export the pin
-            try:
-                with open("/sys/class/gpio/export", "w") as f_export:
-                    f_export.write("%d\n" % pin)
-            except IOError as e:
-                raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
-
-            # Loop until GPIO is exported
-            exported = False
-            for i in range(GPIO.GPIO_EXPORT_STAT_RETRIES):
-                if os.path.isdir(gpio_path):
-                    exported = True
-                    break
-
-                time.sleep(GPIO.GPIO_EXPORT_STAT_DELAY)
-
-            if not exported:
-                raise TimeoutError("Exporting GPIO: waiting for '%s' timed out" % gpio_path)
-
-        # Write direction
-        direction = direction.lower()
-        try:
-            with open("/sys/class/gpio/gpio%d/direction" % pin, "w") as f_direction:
-                f_direction.write(direction + "\n")
-        except IOError as e:
-            raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
-
-        # Open value
-        try:
-            self._fd = os.open("/sys/class/gpio/gpio%d/value" % pin, os.O_RDWR)
-        except OSError as e:
-            raise GPIOError(e.errno, "Opening GPIO: " + e.strerror)
-
-        self._pin = pin
 
     # Methods
 
@@ -108,6 +46,276 @@ class GPIO(object):
             GPIOError: if an I/O or OS error occurs.
 
         """
+        raise NotImplementedError()
+
+    def write(self, value):
+        """Set the state of the GPIO to `value`.
+
+        Args:
+            value (bool): ``True`` for high state, ``False`` for low state.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+            TypeError: if `value` type is not bool.
+
+        """
+        raise NotImplementedError()
+
+    def poll(self, timeout=None):
+        """Poll a GPIO for the edge event configured with the .edge property.
+
+        For character device GPIOs, the edge event should be consumed with
+        `read_event()`. For sysfs GPIOs, the edge event should be consumed with
+        `read()`.
+
+        `timeout` can be a positive number for a timeout in seconds, 0 for a
+        non-blocking poll, or negative or None for a blocking poll. Defaults to
+        blocking poll.
+
+        Args:
+            timeout (int, float, None): timeout duration in seconds.
+
+        Returns:
+            bool: ``True`` if an edge event occurred, ``False`` on timeout.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+            TypeError: if `timeout` type is not None or int.
+
+        """
+        raise NotImplementedError()
+
+    def read_event(self):
+        """Read the edge event that occurred with the GPIO.
+
+        This method is intended for use with character device GPIOs and is
+        unsupported by sysfs GPIOs.
+
+        Returns:
+            EdgeEvent: a namedtuple containing the string edge event that
+            occurred (either ``"rising"`` or ``"falling"``), and the event time
+            reported by Linux in nanoseconds.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+            NotImplementedError: if called on a sysfs GPIO.
+
+        """
+        raise NotImplementedError()
+
+    def close(self):
+        """Close the sysfs GPIO.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+
+        """
+        raise NotImplementedError()
+
+    # Immutable properties
+
+    @property
+    def devpath(self):
+        """Get the device path of the underlying GPIO device.
+
+        :type: str
+        """
+        raise NotImplementedError()
+
+    @property
+    def fd(self):
+        """Get the line file descriptor of the GPIO object.
+
+        :type: int
+        """
+        raise NotImplementedError()
+
+    @property
+    def line(self):
+        """Get the GPIO object's line number.
+
+        :type: int
+        """
+        raise NotImplementedError()
+
+    @property
+    def name(self):
+        """Get the line name of the GPIO.
+
+        his method is intended for use with character device GPIOs and always
+        returns the empty string for sysfs GPIOs.
+
+        :type: str
+        """
+        raise NotImplementedError()
+
+    @property
+    def chip_fd(self):
+        """Get the GPIO chip file descriptor of the GPIO object.
+
+        This method is intended for use with character device GPIOs and is unsupported by sysfs GPIOs.
+
+        Raises:
+            NotImplementedError: if accessed on a sysfs GPIO.
+
+        :type: int
+        """
+        raise NotImplementedError()
+
+    @property
+    def chip_name(self):
+        """Get the name of the GPIO chip associated with the GPIO.
+
+        :type: str
+        """
+        raise NotImplementedError()
+
+    @property
+    def chip_label(self):
+        """ Get the label of the GPIO chip associated with the GPIO.
+
+        :type: str
+        """
+        raise NotImplementedError()
+
+    # Mutable properties
+
+    def _get_direction(self):
+        raise NotImplementedError()
+
+    def _set_direction(self, direction):
+        raise NotImplementedError()
+
+    direction = property(_get_direction, _set_direction)
+    """Get or set the GPIO's direction. Can be "in", "out", "high", "low".
+
+    Direction "in" is input; "out" is output, initialized to low; "high" is
+    output, initialized to high; and "low" is output, initialized to low.
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `direction` type is not str.
+        ValueError: if `direction` value is invalid.
+
+    :type: str
+    """
+
+    def _get_edge(self):
+        raise NotImplementedError()
+
+    def _set_edge(self, edge):
+        raise NotImplementedError()
+
+    edge = property(_get_edge, _set_edge)
+    """Get or set the GPIO's interrupt edge. Can be "none", "rising",
+    "falling", "both".
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `edge` type is not str.
+        ValueError: if `edge` value is invalid.
+
+    :type: str
+    """
+
+    # String representation
+
+    def __str__(self):
+        """Get the string representation of the GPIO.
+
+        :type: str
+        """
+        raise NotImplementedError()
+
+
+class SysfsGPIO(GPIO):
+    # Number of retries to check for successful GPIO export
+    GPIO_EXPORT_STAT_RETRIES = 10
+    # Delay between check for GPIO export (100ms)
+    GPIO_EXPORT_STAT_DELAY = 0.1
+
+    def __init__(self, line, direction):
+        """**Sysfs GPIO**
+
+        Instantiate a GPIO object and open the sysfs GPIO with the specified
+        line and direction.
+
+        `direction` can be "in" for input; "out" for output, initialized to
+        low; "high" for output, initialized to high; or "low" for output,
+        initialized to low.
+
+        Args:
+            line (int): GPIO line number.
+            direction (str): GPIO direction, can be "in", "out", "high", or
+                             "low",
+
+        Returns:
+            SysfsGPIO: GPIO object.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+            TypeError: if `line` or `direction`  types are invalid.
+            ValueError: if `direction` value is invalid.
+            TimeoutError: if waiting for GPIO export times out.
+
+        """
+        self._fd = None
+        self._line = None
+
+        self._open(line, direction)
+
+    def __new__(self, line, direction):
+        return object.__new__(SysfsGPIO)
+
+    def _open(self, line, direction):
+        if not isinstance(line, int):
+            raise TypeError("Invalid line type, should be integer.")
+        if not isinstance(direction, str):
+            raise TypeError("Invalid direction type, should be string.")
+        if direction.lower() not in ["in", "out", "high", "low"]:
+            raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
+
+        gpio_path = "/sys/class/gpio/gpio%d" % line
+
+        if not os.path.isdir(gpio_path):
+            # Export the line
+            try:
+                with open("/sys/class/gpio/export", "w") as f_export:
+                    f_export.write("%d\n" % line)
+            except IOError as e:
+                raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
+
+            # Loop until GPIO is exported
+            exported = False
+            for i in range(SysfsGPIO.GPIO_EXPORT_STAT_RETRIES):
+                if os.path.isdir(gpio_path):
+                    exported = True
+                    break
+
+                time.sleep(SysfsGPIO.GPIO_EXPORT_STAT_DELAY)
+
+            if not exported:
+                raise TimeoutError("Exporting GPIO: waiting for '%s' timed out" % gpio_path)
+
+        # Write direction
+        try:
+            with open(os.path.join(gpio_path, "direction"), "w") as f_direction:
+                f_direction.write(direction.lower() + "\n")
+        except IOError as e:
+            raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
+
+        # Open value
+        try:
+            self._fd = os.open(os.path.join(gpio_path, "value"), os.O_RDWR)
+        except OSError as e:
+            raise GPIOError(e.errno, "Opening GPIO: " + e.strerror)
+
+        self._line = line
+        self._path = gpio_path
+
+    # Methods
+
+    def read(self):
         # Read value
         try:
             buf = os.read(self._fd, 2)
@@ -128,16 +336,6 @@ class GPIO(object):
         raise GPIOError(None, "Unknown GPIO value: \"%s\"" % buf[0])
 
     def write(self, value):
-        """Set the state of the GPIO to `value`.
-
-        Args:
-            value (bool): ``True`` for high state, ``False`` for low state.
-
-        Raises:
-            GPIOError: if an I/O or OS error occurs.
-            TypeError: if `value` type is not bool.
-
-        """
         if not isinstance(value, bool):
             raise TypeError("Invalid value type, should be bool.")
 
@@ -157,36 +355,19 @@ class GPIO(object):
             raise GPIOError(e.errno, "Rewinding GPIO: " + e.strerror)
 
     def poll(self, timeout=None):
-        """Poll a GPIO for the edge event configured with the .edge property.
-
-        `timeout` can be a positive number for a timeout in seconds, 0 for a
-        non-blocking poll, or negative or None for a blocking poll. Defaults to
-        blocking poll.
-
-        Args:
-            timeout (int, float, None): timeout duration in seconds.
-
-        Returns:
-            bool: ``True`` if an edge event occurred, ``False`` on timeout.
-
-        Raises:
-            GPIOError: if an I/O or OS error occurs.
-            TypeError: if `timeout` type is not None or int.
-
-        """
-        if timeout is None:
-            timeout = -1
-
-        if not isinstance(timeout, (int, float)):
+        if not isinstance(timeout, (int, float, type(None))):
             raise TypeError("Invalid timeout type, should be integer, float, or None.")
 
-        # Setup epoll
-        p = select.epoll()
-        p.register(self._fd, select.EPOLLIN | select.EPOLLET | select.EPOLLPRI)
+        # Setup poll
+        p = select.poll()
+        p.register(self._fd, select.POLLPRI | select.POLLERR)
 
-        # Poll twice, as first call returns with current state
-        for _ in range(2):
-            events = p.poll(timeout)
+        # Scale timeout to milliseconds
+        if isinstance(timeout, (int, float)) and timeout > 0:
+            timeout *= 1000
+
+        # Poll
+        events = p.poll(timeout)
 
         # If GPIO edge interrupt occurred
         if events:
@@ -200,13 +381,10 @@ class GPIO(object):
 
         return False
 
+    def read_event(self):
+        raise NotImplementedError()
+
     def close(self):
-        """Close the sysfs GPIO.
-
-        Raises:
-            GPIOError: if an I/O or OS error occurs.
-
-        """
         if self._fd is None:
             return
 
@@ -217,47 +395,68 @@ class GPIO(object):
 
         self._fd = None
 
-        # Unexport the pin
+        # Unexport the line
         try:
-            with open("/sys/class/gpio/unexport", "w") as f_unexport:
-                f_unexport.write("%d\n" % self._pin)
-        except IOError as e:
+            unexport_fd = os.open("/sys/class/gpio/unexport", os.O_WRONLY)
+            os.write(unexport_fd, b"%d\n" % self._line)
+            os.close(unexport_fd)
+        except OSError as e:
             raise GPIOError(e.errno, "Unexporting GPIO: " + e.strerror)
 
     # Immutable properties
 
     @property
-    def fd(self):
-        """Get the file descriptor for the underlying sysfs GPIO "value" file
-        of the GPIO object.
+    def devpath(self):
+        return self._path
 
-        :type: int
-        """
+    @property
+    def fd(self):
         return self._fd
 
     @property
-    def pin(self):
-        """Get the sysfs GPIO pin number.
-
-        :type: int
-        """
-        return self._pin
+    def line(self):
+        return self._line
 
     @property
-    def supports_interrupts(self):
-        """Get whether or not this GPIO supports edge interrupts, configurable
-        with the .edge property.
+    def name(self):
+        return ""
 
-        :type: bool
-        """
-        return os.path.isfile("/sys/class/gpio/gpio%d/edge" % self._pin)
+    @property
+    def chip_fd(self):
+        raise NotImplementedError("Sysfs GPIO does not have a gpiochip file descriptor.")
+
+    @property
+    def chip_name(self):
+        gpio_path = os.path.join(self._path, "device")
+
+        gpiochip_path = os.readlink(gpio_path)
+
+        if '/' not in gpiochip_path:
+            raise GPIOError(None, "Reading gpiochip name: invalid device symlink \"%s\"" % gpiochip_path)
+
+        return gpiochip_path.split('/')[-1]
+
+    @property
+    def chip_label(self):
+        gpio_path = "/sys/class/gpio/%s/label" % self.chip_name
+
+        try:
+            with open(gpio_path, "r") as f_label:
+                label = f_label.read()
+        except (GPIOError, IOError) as e:
+            if isinstance(e, IOError):
+                raise GPIOError(e.errno, "Reading gpiochip label: " + e.strerror)
+
+            raise GPIOError(None, "Reading gpiochip label: " + e.strerror)
+
+        return label.strip()
 
     # Mutable properties
 
     def _get_direction(self):
         # Read direction
         try:
-            with open("/sys/class/gpio/gpio%d/direction" % self._pin, "r") as f_direction:
+            with open(os.path.join(self._path, "direction"), "r") as f_direction:
                 direction = f_direction.read()
         except IOError as e:
             raise GPIOError(e.errno, "Getting GPIO direction: " + e.strerror)
@@ -272,30 +471,17 @@ class GPIO(object):
 
         # Write direction
         try:
-            direction = direction.lower()
-            with open("/sys/class/gpio/gpio%d/direction" % self._pin, "w") as f_direction:
-                f_direction.write(direction + "\n")
+            with open(os.path.join(self._path, "direction"), "w") as f_direction:
+                f_direction.write(direction.lower() + "\n")
         except IOError as e:
             raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
     direction = property(_get_direction, _set_direction)
-    """Get or set the GPIO's direction. Can be "in", "out", "high", "low".
-
-    Direction "in" is input; "out" is output, initialized to low; "high" is
-    output, initialized to high; and "low" is output, initialized to low.
-
-    Raises:
-        GPIOError: if an I/O or OS error occurs.
-        TypeError: if `direction` type is not str.
-        ValueError: if `direction` value is invalid.
-
-    :type: str
-    """
 
     def _get_edge(self):
         # Read edge
         try:
-            with open("/sys/class/gpio/gpio%d/edge" % self._pin, "r") as f_edge:
+            with open(os.path.join(self._path, "edge"), "r") as f_edge:
                 edge = f_edge.read()
         except IOError as e:
             raise GPIOError(e.errno, "Getting GPIO edge: " + e.strerror)
@@ -310,27 +496,35 @@ class GPIO(object):
 
         # Write edge
         try:
-            edge = edge.lower()
-            with open("/sys/class/gpio/gpio%d/edge" % self._pin, "w") as f_edge:
-                f_edge.write(edge + "\n")
+            with open(os.path.join(self._path, "edge"), "w") as f_edge:
+                f_edge.write(edge.lower() + "\n")
         except IOError as e:
             raise GPIOError(e.errno, "Setting GPIO edge: " + e.strerror)
 
     edge = property(_get_edge, _set_edge)
-    """Get or set the GPIO's interrupt edge. Can be "none", "rising", "falling", "both".
-
-    Raises:
-        GPIOError: if an I/O or OS error occurs.
-        TypeError: if `edge` type is not str.
-        ValueError: if `edge` value is invalid.
-
-    :type: str
-    """
 
     # String representation
 
     def __str__(self):
-        if self.supports_interrupts:
-            return "GPIO %d (fd=%d, direction=%s, supports interrupts, edge=%s)" % (self._pin, self._fd, self.direction, self.edge)
+        try:
+            str_direction = self.direction
+        except GPIOError:
+            str_direction = "<error>"
 
-        return "GPIO %d (fd=%d, direction=%s, no interrupts)" % (self._pin, self._fd, self.direction)
+        try:
+            str_edge = self.edge
+        except GPIOError:
+            str_edge = "<error>"
+
+        try:
+            str_chip_name = self.chip_name
+        except GPIOError:
+            str_chip_name = "<error>"
+
+        try:
+            str_chip_label = self.chip_label
+        except GPIOError:
+            str_chip_label = "<error>"
+
+        return "GPIO %d (device=%s, fd=%d, direction=%s, edge=%s, chip_name=\"%s\", chip_label=\"%s\", type=sysfs)" % \
+            (self._line, self._path, self._fd, str_direction, str_edge, str_chip_name, str_chip_label)
