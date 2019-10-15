@@ -1,4 +1,5 @@
 import sys
+import time
 import periphery
 from .asserts import AssertRaises
 
@@ -35,26 +36,32 @@ def test_open_close():
 
     # Set brightness to 1, check brightness
     led.write(1)
+    time.sleep(0.01)
     assert led.read() >= 1
 
     # Set brightness to 0, check brightness
     led.write(0)
+    time.sleep(0.01)
     assert led.read() == 0
 
     # Set brightness to 1, check brightness
     led.brightness = 1
+    time.sleep(0.01)
     assert led.brightness >= 1
 
     # Set brightness to 0, check brightness
     led.brightness = 0
+    time.sleep(0.01)
     assert led.brightness == 0
 
     # Set brightness to True, check brightness
     led.write(True)
+    time.sleep(0.01)
     assert led.read() == led.max_brightness
 
     # Set brightness to False, check brightness
     led.write(False)
+    time.sleep(0.01)
     assert led.read() == 0
 
     led.close()
