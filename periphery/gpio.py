@@ -217,6 +217,13 @@ class GPIO(object):
 
         self._fd = None
 
+        # Unexport the pin
+        try:
+            with open("/sys/class/gpio/unexport", "w") as f_unexport:
+                f_unexport.write("%d\n" % self._pin)
+        except IOError as e:
+            raise GPIOError(e.errno, "Unexporting GPIO: " + e.strerror)
+
     # Immutable properties
 
     @property
