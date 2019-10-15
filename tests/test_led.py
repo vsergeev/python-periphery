@@ -35,7 +35,7 @@ def test_open_close():
 
     # Set brightness to 1, check brightness
     led.write(1)
-    assert led.read() == 1
+    assert led.read() >= 1
 
     # Set brightness to 0, check brightness
     led.write(0)
@@ -43,7 +43,7 @@ def test_open_close():
 
     # Set brightness to 1, check brightness
     led.brightness = 1
-    assert led.brightness == 1
+    assert led.brightness >= 1
 
     # Set brightness to 0, check brightness
     led.brightness = 0
