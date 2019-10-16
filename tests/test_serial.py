@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import periphery
@@ -14,17 +15,17 @@ def test_arguments():
 
     # Invalid data bits
     with AssertRaises(ValueError):
-        periphery.Serial(serial_device, 115200, databits=4)
+        periphery.Serial("/dev/ttyS0", 115200, databits=4)
     with AssertRaises(ValueError):
-        periphery.Serial(serial_device, 115200, databits=9)
+        periphery.Serial("/dev/ttyS0", 115200, databits=9)
     # Invalid parity
     with AssertRaises(ValueError):
-        periphery.Serial(serial_device, 115200, parity="blah")
-    # Invalid stopb bits
+        periphery.Serial("/dev/ttyS0", 115200, parity="blah")
+    # Invalid stop bits
     with AssertRaises(ValueError):
-        periphery.Serial(serial_device, 115200, stopbits=0)
+        periphery.Serial("/dev/ttyS0", 115200, stopbits=0)
     with AssertRaises(ValueError):
-        periphery.Serial(serial_device, 115200, stopbits=3)
+        periphery.Serial("/dev/ttyS0", 115200, stopbits=3)
 
     # Everything else is fair game, although termios might not like it.
 
@@ -167,6 +168,10 @@ def test_interactive():
 
 
 if __name__ == "__main__":
+    if os.environ.get("CI") == "true":
+        test_arguments()
+        sys.exit(0)
+
     if len(sys.argv) < 2:
         print("Usage: python -m tests.test_serial <serial port device>")
         print("")
