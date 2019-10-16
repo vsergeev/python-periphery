@@ -1,3 +1,4 @@
+import os
 import sys
 import periphery
 from .asserts import AssertRaises
@@ -13,10 +14,10 @@ def test_arguments():
 
     # Invalid mode
     with AssertRaises(ValueError):
-        periphery.SPI(spi_device, 4, int(1e6))
+        periphery.SPI("/dev/spidev0.0", 4, int(1e6))
     # Invalid bit order
     with AssertRaises(ValueError):
-        periphery.SPI(spi_device, 4, int(1e6), bit_order="blah")
+        periphery.SPI("/dev/spidev0.0", 4, int(1e6), bit_order="blah")
 
     print("Arguments test passed.")
 
@@ -145,6 +146,10 @@ def test_interactive():
 
 
 if __name__ == "__main__":
+    if os.environ.get("CI") == "true":
+        test_arguments()
+        sys.exit(0)
+
     if len(sys.argv) < 2:
         print("Usage: python -m tests.test_spi <SPI device>")
         print("")
