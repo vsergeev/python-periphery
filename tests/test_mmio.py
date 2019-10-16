@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import periphery
@@ -152,6 +153,10 @@ def test_interactive():
 
 
 if __name__ == "__main__":
+    if os.environ.get("CI") == "true":
+        test_arguments()
+        sys.exit(0)
+
     print("WARNING: This test suite assumes a BeagleBone Black (AM335x) host!")
     print("Other systems may experience unintended and dire consequences!")
     raw_input("Press enter to continue!")
