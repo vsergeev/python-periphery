@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "pypy"
+  - "pypy3"
+
+script:
+  - python -m tests.test_gpio
+  - python -m tests.test_spi
+  - python -m tests.test_i2c
+  - python -m tests.test_mmio
+  - python -m tests.test_serial
+  - python -m tests.test_led
+  - python -m tests.test_pwm
