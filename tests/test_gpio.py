@@ -1,3 +1,4 @@
+import os
 import sys
 import threading
 import time
@@ -213,6 +214,10 @@ def test_interactive():
 
 
 if __name__ == "__main__":
+    if os.environ.get("CI") == "true":
+        test_arguments()
+        sys.exit(0)
+
     if len(sys.argv) < 3:
         print("Usage: python -m tests.test_gpio <GPIO #1> <GPIO #2>")
         print("")
