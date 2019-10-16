@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import periphery
@@ -94,6 +95,10 @@ def test_interactive():
 
 
 if __name__ == "__main__":
+    if os.environ.get("CI") == "true":
+        test_arguments()
+        sys.exit(0)
+
     if len(sys.argv) < 2:
         print("Usage: python -m tests.test_led <LED name>")
         print("")
