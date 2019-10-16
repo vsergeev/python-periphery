@@ -1,3 +1,4 @@
+import os
 import sys
 import periphery
 from .asserts import AssertRaises
@@ -126,6 +127,10 @@ def test_interactive():
 
 
 if __name__ == "__main__":
+    if os.environ.get("CI") == "true":
+        test_arguments()
+        sys.exit(0)
+
     if len(sys.argv) < 3:
         print("Usage: python -m tests.test_pwm <PWM channel> <PWM pin number>")
         print("")
