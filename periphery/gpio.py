@@ -1,4 +1,6 @@
 import collections
+import ctypes
+import fcntl
 import os
 import os.path
 import select
@@ -23,7 +25,10 @@ class EdgeEvent(collections.namedtuple('EdgeEvent', ['edge', 'timestamp'])):
 
 class GPIO(object):
     def __new__(cls, *args):
-        return SysfsGPIO.__new__(cls, *args)
+        if len(args) > 2:
+            return CdevGPIO.__new__(cls, *args)
+        else:
+            return SysfsGPIO.__new__(cls, *args)
 
     def __del__(self):
         self.close()
@@ -226,6 +231,423 @@ class GPIO(object):
         :type: str
         """
         raise NotImplementedError()
+
+
+class _CGpiochipInfo(ctypes.Structure):
+    _fields_ = [
+        ('name', ctypes.c_char * 32),
+        ('label', ctypes.c_char * 32),
+        ('lines', ctypes.c_uint32),
+    ]
+
+
+class _CGpiolineInfo(ctypes.Structure):
+    _fields_ = [
+        ('line_offset', ctypes.c_uint32),
+        ('flags', ctypes.c_uint32),
+        ('name', ctypes.c_char * 32),
+        ('consumer', ctypes.c_char * 32),
+    ]
+
+
+class _CGpiohandleRequest(ctypes.Structure):
+    _fields_ = [
+        ('lineoffsets', ctypes.c_uint32 * 64),
+        ('flags', ctypes.c_uint32),
+        ('default_values', ctypes.c_uint8 * 64),
+        ('consumer_label', ctypes.c_char * 32),
+        ('lines', ctypes.c_uint32),
+        ('fd', ctypes.c_int),
+    ]
+
+
+class _CGpiohandleData(ctypes.Structure):
+    _fields_ = [
+        ('values', ctypes.c_uint8 * 64),
+    ]
+
+
+class _CGpioeventRequest(ctypes.Structure):
+    _fields_ = [
+        ('lineoffset', ctypes.c_uint32),
+        ('handleflags', ctypes.c_uint32),
+        ('eventflags', ctypes.c_uint32),
+        ('consumer_label', ctypes.c_char * 32),
+        ('fd', ctypes.c_int),
+    ]
+
+
+class _CGpioeventData(ctypes.Structure):
+    _fields_ = [
+        ('timestamp', ctypes.c_uint64),
+        ('id', ctypes.c_uint32),
+    ]
+
+
+class CdevGPIO(GPIO):
+    # Constants scraped from <linux/gpio.h>
+    _GPIOHANDLE_GET_LINE_VALUES_IOCTL = 0xc040b408
+    _GPIOHANDLE_SET_LINE_VALUES_IOCTL = 0xc040b409
+    _GPIO_GET_CHIPINFO_IOCTL = 0x8044b401
+    _GPIO_GET_LINEINFO_IOCTL = 0xc048b402
+    _GPIO_GET_LINEHANDLE_IOCTL = 0xc16cb403
+    _GPIO_GET_LINEEVENT_IOCTL = 0xc030b404
+    _GPIOHANDLE_REQUEST_INPUT = 0x1
+    _GPIOHANDLE_REQUEST_OUTPUT = 0x2
+    _GPIOEVENT_REQUEST_RISING_EDGE = 0x1
+    _GPIOEVENT_REQUEST_FALLING_EDGE = 0x2
+    _GPIOEVENT_REQUEST_BOTH_EDGES = 0x3
+    _GPIOEVENT_EVENT_RISING_EDGE = 0x1
+    _GPIOEVENT_EVENT_FALLING_EDGE = 0x2
+
+    def __init__(self, path, line, direction):
+        """**Character device GPIO**
+
+        Instantiate a GPIO object and open the character device GPIO with the
+        specified line and direction at the specified GPIO chip path (e.g.
+        "/dev/gpiochip0").
+
+        `direction` can be "in" for input; "out" for output, initialized to
+        low; "high" for output, initialized to high; or "low" for output,
+        initialized to low.
+
+        Args:
+            path (str): GPIO chip character device path.
+            line (int, str): GPIO line number or name.
+            direction (str): GPIO direction, can be "in", "out", "high", or
+                             "low".
+
+        Returns:
+            CdevGPIO: GPIO object.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+            TypeError: if `path`, `line`, or `direction`  types are invalid.
+            ValueError: if `direction` value is invalid.
+            LookupError: if the GPIO line was not found by the provided name.
+
+        """
+        self._devpath = None
+        self._line_fd = None
+        self._chip_fd = None
+        self._edge = "none"
+        self._direction = "in"
+        self._line = None
+
+        self._open(path, line, direction)
+
+    def __new__(self, path, line, direction):
+        return object.__new__(CdevGPIO)
+
+    def _open(self, path, line, direction):
+        if not isinstance(path, str):
+            raise TypeError("Invalid path type, should be string.")
+        if not isinstance(line, (int, str)):
+            raise TypeError("Invalid line type, should be integer or string.")
+        if not isinstance(direction, str):
+            raise TypeError("Invalid direction type, should be string.")
+        if direction.lower() not in ["in", "out", "high", "low"]:
+            raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
+
+        # Open GPIO chip
+        try:
+            self._chip_fd = os.open(path, 0)
+        except OSError as e:
+            raise GPIOError(e.errno, "Opening GPIO chip: " + e.strerror)
+
+        self._devpath = path
+
+        if isinstance(line, int):
+            self._line = line
+            self._reopen(direction, "none")
+        else:
+            self._line = self._find_line_by_name(line)
+            self._reopen(direction, "none")
+
+    def _reopen(self, direction, edge):
+        # Close existing line
+        if self._line_fd is not None:
+            try:
+                os.close(self._line_fd)
+            except OSError as e:
+                raise GPIOError(e.errno, "Closing existing GPIO line: " + e.strerror)
+
+        if direction == "in":
+            if edge == "none":
+                request = _CGpiohandleRequest()
+
+                request.lineoffsets[0] = self._line
+                request.flags = CdevGPIO._GPIOHANDLE_REQUEST_INPUT
+                request.consumer_label = b"periphery"
+                request.lines = 1
+
+                try:
+                    fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEHANDLE_IOCTL, request)
+                except (OSError, IOError) as e:
+                    raise GPIOError(e.errno, "Opening input line handle: " + e.strerror)
+
+                self._line_fd = request.fd
+                self._direction = "in"
+                self._edge = "none"
+            else:
+                request = _CGpioeventRequest()
+
+                request.lineoffset = self._line
+                request.handleflags = CdevGPIO._GPIOHANDLE_REQUEST_INPUT
+                request.eventflags = CdevGPIO._GPIOEVENT_REQUEST_RISING_EDGE if edge == "rising" else CdevGPIO._GPIOEVENT_REQUEST_FALLING_EDGE if edge == "falling" else CdevGPIO._GPIOEVENT_REQUEST_BOTH_EDGES
+                request.consumer_label = b"periphery"
+
+                try:
+                    fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEEVENT_IOCTL, request)
+                except (OSError, IOError) as e:
+                    raise GPIOError(e.errno, "Opening input line event handle: " + e.strerror)
+
+                self._line_fd = request.fd
+                self._direction = "in"
+                self._edge = edge
+        else:
+            request = _CGpiohandleRequest()
+            initial_value = True if direction == "high" else False
+
+            request.lineoffsets[0] = self._line
+            request.flags = CdevGPIO._GPIOHANDLE_REQUEST_OUTPUT
+            request.default_values[0] = initial_value
+            request.consumer_label = b"periphery"
+            request.lines = 1
+
+            try:
+                fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEHANDLE_IOCTL, request)
+            except (OSError, IOError) as e:
+                raise GPIOError(e.errno, "Opening output line handle: " + e.strerror)
+
+            self._line_fd = request.fd
+            self._direction = "out"
+            self._edge = "none"
+
+    def _find_line_by_name(self, line):
+        # Get chip info for number of lines
+        chip_info = _CGpiochipInfo()
+        try:
+            fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_CHIPINFO_IOCTL, chip_info)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Querying GPIO chip info: " + e.strerror)
+
+        # Get each line info
+        line_info = _CGpiolineInfo()
+        for i in range(chip_info.lines):
+            line_info.line_offset = i
+            try:
+                fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEINFO_IOCTL, line_info)
+            except (OSError, IOError) as e:
+                raise GPIOError(e.errno, "Querying GPIO line info: " + e.strerror)
+
+            if line_info.name.decode() == line:
+                return i
+
+        raise LookupError("Opening GPIO line: GPIO line \"%s\" not found by name." % line)
+
+    # Methods
+
+    def read(self):
+        data = _CGpiohandleData()
+
+        try:
+            fcntl.ioctl(self._line_fd, CdevGPIO._GPIOHANDLE_GET_LINE_VALUES_IOCTL, data)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Getting line value: " + e.strerror)
+
+        return bool(data.values[0])
+
+    def write(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("Invalid value type, should be bool.")
+
+        data = _CGpiohandleData()
+
+        data.values[0] = value
+
+        try:
+            fcntl.ioctl(self._line_fd, CdevGPIO._GPIOHANDLE_SET_LINE_VALUES_IOCTL, data)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Setting line value: " + e.strerror)
+
+    def poll(self, timeout=None):
+        if not isinstance(timeout, (int, float, type(None))):
+            raise TypeError("Invalid timeout type, should be integer, float, or None.")
+
+        # Setup poll
+        p = select.poll()
+        p.register(self._line_fd, select.POLLIN | select.POLLPRI | select.POLLERR)
+
+        # Scale timeout to milliseconds
+        if isinstance(timeout, (int, float)) and timeout > 0:
+            timeout *= 1000
+
+        # Poll
+        events = p.poll(timeout)
+
+        return len(events) > 0
+
+    def read_event(self):
+        if self._edge == "none":
+            raise GPIOError(None, "Invalid operation: GPIO edge not set")
+
+        try:
+            buf = os.read(self._line_fd, ctypes.sizeof(_CGpioeventData))
+        except OSError as e:
+            raise GPIOError(e.errno, "Reading GPIO event: " + e.strerror)
+
+        event_data = _CGpioeventData.from_buffer_copy(buf)
+
+        if event_data.id == CdevGPIO._GPIOEVENT_EVENT_RISING_EDGE:
+            edge = "rising"
+        elif event_data.id == CdevGPIO._GPIOEVENT_EVENT_FALLING_EDGE:
+            edge = "falling"
+        else:
+            edge = "none"
+
+        timestamp = event_data.timestamp
+
+        return EdgeEvent(edge, timestamp)
+
+    def close(self):
+        try:
+            if self._line_fd is not None:
+                os.close(self._line_fd)
+        except OSError as e:
+            raise GPIOError(e.errno, "Closing GPIO line: " + e.strerror)
+
+        try:
+            if self._chip_fd is not None:
+                os.close(self._chip_fd)
+        except OSError as e:
+            raise GPIOError(e.errno, "Closing GPIO chip: " + e.strerror)
+
+        self._line_fd = None
+        self._chip_fd = None
+        self._edge = "none"
+        self._direction = "in"
+        self._line = None
+
+    # Immutable properties
+
+    @property
+    def devpath(self):
+        return self._devpath
+
+    @property
+    def fd(self):
+        return self._line_fd
+
+    @property
+    def line(self):
+        return self._line
+
+    @property
+    def name(self):
+        line_info = _CGpiolineInfo()
+        line_info.line_offset = self._line
+
+        try:
+            fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEINFO_IOCTL, line_info)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Querying GPIO line info: " + e.strerror)
+
+        return line_info.name.decode()
+
+    @property
+    def chip_fd(self):
+        return self._chip_fd
+
+    @property
+    def chip_name(self):
+        chip_info = _CGpiochipInfo()
+
+        try:
+            fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_CHIPINFO_IOCTL, chip_info)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Querying GPIO chip info: " + e.strerror)
+
+        return chip_info.name.decode()
+
+    @property
+    def chip_label(self):
+        chip_info = _CGpiochipInfo()
+
+        try:
+            fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_CHIPINFO_IOCTL, chip_info)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Querying GPIO chip info: " + e.strerror)
+
+        return chip_info.label.decode()
+
+    # Mutable properties
+
+    def _get_direction(self):
+        return self._direction
+
+    def _set_direction(self, direction):
+        if not isinstance(direction, str):
+            raise TypeError("Invalid direction type, should be string.")
+        if direction.lower() not in ["in", "out", "high", "low"]:
+            raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
+
+        if self._direction == direction:
+            return
+
+        self._reopen(direction, "none")
+
+    direction = property(_get_direction, _set_direction)
+
+    def _get_edge(self):
+        return self._edge
+
+    def _set_edge(self, edge):
+        if not isinstance(edge, str):
+            raise TypeError("Invalid edge type, should be string.")
+        if edge.lower() not in ["none", "rising", "falling", "both"]:
+            raise ValueError("Invalid edge, can be: \"none\", \"rising\", \"falling\", \"both\".")
+
+        if self._direction != "in":
+            raise GPIOError(None, "Invalid operation: cannot set edge on output GPIO")
+
+        if self._edge == edge:
+            return
+
+        self._reopen("in", edge)
+
+    edge = property(_get_edge, _set_edge)
+
+    # String representation
+
+    def __str__(self):
+        try:
+            str_name = self.name
+        except GPIOError:
+            str_name = "<error>"
+
+        try:
+            str_direction = self.direction
+        except GPIOError:
+            str_direction = "<error>"
+
+        try:
+            str_edge = self.edge
+        except GPIOError:
+            str_edge = "<error>"
+
+        try:
+            str_chip_name = self.chip_name
+        except GPIOError:
+            str_chip_name = "<error>"
+
+        try:
+            str_chip_label = self.chip_label
+        except GPIOError:
+            str_chip_label = "<error>"
+
+        return "GPIO %d (name=\"%s\", device=%s, line_fd=%d, chip_fd=%d, direction=%s, edge=%s, chip_name=\"%s\", chip_label=\"%s\", type=cdev)" % \
+            (self._line, str_name, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_chip_name, str_chip_label)
 
 
 class SysfsGPIO(GPIO):
