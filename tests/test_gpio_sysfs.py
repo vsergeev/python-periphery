@@ -215,7 +215,7 @@ if __name__ == "__main__":
         print("Hint: for Raspberry Pi 3,")
         print("Use GPIO 17 (header pin 11) and GPIO 27 (header pin 13),")
         print("connect a loopback between them, and run this test with:")
-        print("    python -m tests.test_gpio 17 27")
+        print("    python -m tests.test_gpio_sysfs 17 27")
         print("")
         sys.exit(1)
 
