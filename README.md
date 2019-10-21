@@ -32,13 +32,13 @@ python setup.py install
 ``` python
 from periphery import GPIO
 
-# Open GPIO 10 with input direction
-gpio_in = GPIO(10, "in")
-# Open GPIO 12 with output direction
-gpio_out = GPIO(12, "out")
+# Open GPIO /dev/gpiochip0 10 with input direction
+gpio_in = GPIO("/dev/gpiochip0", 10, "in")
+# Open GPIO /dev/gpiochip0 12 with output direction
+gpio_out = GPIO("/dev/gpiochip0", 12, "out")
 
 value = gpio_in.read()
-gpio_out.write(value)
+gpio_out.write(not value)
 
 gpio_in.close()
 gpio_out.close()
