@@ -1,5 +1,6 @@
 import collections
 import ctypes
+import errno
 import fcntl
 import os
 import os.path
@@ -651,10 +652,10 @@ class CdevGPIO(GPIO):
 
 
 class SysfsGPIO(GPIO):
-    # Number of retries to check for successful GPIO export
-    GPIO_EXPORT_STAT_RETRIES = 10
-    # Delay between check for GPIO export (100ms)
-    GPIO_EXPORT_STAT_DELAY = 0.1
+    # Number of retries to check for GPIO export or direction write on open
+    GPIO_OPEN_RETRIES = 10
+    # Delay between check for GPIO export or direction write on open (100ms)
+    GPIO_OPEN_DELAY = 0.1
 
     def __init__(self, line, direction):
         """**Sysfs GPIO**
@@ -709,22 +710,35 @@ class SysfsGPIO(GPIO):
 
             # Loop until GPIO is exported
             exported = False
-            for i in range(SysfsGPIO.GPIO_EXPORT_STAT_RETRIES):
+            for i in range(SysfsGPIO.GPIO_OPEN_RETRIES):
                 if os.path.isdir(gpio_path):
                     exported = True
                     break
 
-                time.sleep(SysfsGPIO.GPIO_EXPORT_STAT_DELAY)
+                time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
 
             if not exported:
                 raise TimeoutError("Exporting GPIO: waiting for '%s' timed out" % gpio_path)
 
-        # Write direction
-        try:
-            with open(os.path.join(gpio_path, "direction"), "w") as f_direction:
-                f_direction.write(direction.lower() + "\n")
-        except IOError as e:
-            raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
+            # Write direction, looping in case of EACCES errors due to delayed udev
+            # permission rule application after export
+            for i in range(SysfsGPIO.GPIO_OPEN_RETRIES):
+                try:
+                    with open(os.path.join(gpio_path, "direction"), "w") as f_direction:
+                        f_direction.write(direction.lower() + "\n")
+                    break
+                except IOError as e:
+                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == SysfsGPIO.GPIO_OPEN_RETRIES - 1):
+                        raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
+
+                time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
+        else:
+            # Write direction
+            try:
+                with open(os.path.join(gpio_path, "direction"), "w") as f_direction:
+                    f_direction.write(direction.lower() + "\n")
+            except IOError as e:
+                raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
         # Open value
         try:
