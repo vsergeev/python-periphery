@@ -1,4 +1,5 @@
 import os
+import time
 
 
 class PWMError(IOError):
@@ -7,6 +8,11 @@ class PWMError(IOError):
 
 
 class PWM(object):
+    # Number of retries to check for successful PWM export on open
+    PWM_STAT_RETRIES = 10
+    # Delay between check for scucessful PWM export on open (100ms)
+    PWM_STAT_DELAY = 0.1
+
     # Sysfs paths
     _sysfs_path = "/sys/class/pwm/"
     _channel_path = "pwmchip{}"
@@ -36,6 +42,7 @@ class PWM(object):
             PWMError: if an I/O or OS error occurs.
             TypeError: if `channel` or `pin` types are invalid.
             ValueError: if PWM channel does not exist.
+            TimeoutError: if waiting for PWM export times out.
 
         """
 
@@ -63,12 +70,26 @@ class PWM(object):
             raise ValueError("PWM channel does not exist, check that the required modules are loaded.")
 
         pin_path = os.path.join(channel_path, self._pin_path.format(pin))
+
         if not os.path.isdir(pin_path):
+            # Export the PWM
             try:
                 with open(os.path.join(channel_path, self._export_path), "w") as f_export:
                     f_export.write("%d\n" % pin)
             except IOError as e:
                 raise PWMError(e.errno, "Exporting PWM pin: " + e.strerror)
+
+            # Loop until PWM is exported
+            exported = False
+            for i in range(PWM.PWM_STAT_RETRIES):
+                if os.path.isdir(pin_path):
+                    exported = True
+                    break
+
+                time.sleep(PWM.PWM_STAT_DELAY)
+
+            if not exported:
+                raise TimeoutError("Exporting PWM: waiting for '%s' timed out" % pin_path)
 
         self._channel = channel
         self._pin = pin
