@@ -6,8 +6,8 @@ from .asserts import AssertRaises
 if sys.version_info[0] == 3:
     raw_input = input
 
+pwm_chip = None
 pwm_channel = None
-pwm_pin = None
 
 
 def test_arguments():
@@ -25,18 +25,18 @@ def test_arguments():
 def test_open_close():
     print("Starting open/close test...")
 
+    # Open non-existent PWM chip
+    with AssertRaises(LookupError):
+        periphery.PWM(9999, pwm_channel)
+
     # Open non-existent PWM channel
-    with AssertRaises(ValueError):
-        periphery.PWM(9999, pwm_pin)
-
-    # Open non-existent PWM pin
     with AssertRaises(periphery.PWMError):
-        periphery.PWM(pwm_channel, 9999)
+        periphery.PWM(pwm_chip, 9999)
 
-    # Open legitimate PWM channel/pin
-    pwm = periphery.PWM(pwm_channel, pwm_pin)
+    # Open legitimate PWM chip/channel
+    pwm = periphery.PWM(pwm_chip, pwm_channel)
+    assert pwm.chip == pwm_chip
     assert pwm.channel == pwm_channel
-    assert pwm.pin == pwm_pin
 
     # Set period, check period and frequency
     pwm.period = 1e-3
@@ -87,7 +87,7 @@ def test_open_close():
 def test_interactive():
     print("Starting interactive test...")
 
-    pwm = periphery.PWM(pwm_channel, pwm_pin)
+    pwm = periphery.PWM(pwm_chip, pwm_channel)
 
     print("Starting interactive test. Get out your oscilloscope, buddy!")
     raw_input("Press enter to continue...")
@@ -132,10 +132,10 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if len(sys.argv) < 3:
-        print("Usage: python -m tests.test_pwm <PWM channel> <PWM pin number>")
+        print("Usage: python -m tests.test_pwm <PWM chip> <PWM channel>")
         print("")
         print("[1/4] Arguments test: No requirements.")
-        print("[2/4] Open/close test: PWM device should be real.")
+        print("[2/4] Open/close test: PWM channel should be real.")
         print("[3/4] Loopback test: No test.")
         print("[4/4] Interactive test: PWM channel should be observed with an oscilloscope or logic analyzer.")
         print("")
@@ -150,8 +150,8 @@ if __name__ == "__main__":
 
         sys.exit(1)
 
-    pwm_channel = int(sys.argv[1])
-    pwm_pin = int(sys.argv[2])
+    pwm_chip = int(sys.argv[1])
+    pwm_channel = int(sys.argv[2])
 
     print("Starting PMW tests...")
 

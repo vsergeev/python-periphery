@@ -8,7 +8,7 @@ Code Example
 
     from periphery import PWM
     
-    # Open PWM channel 0, pin 10
+    # Open PWM chip 0, channel 10
     pwm = PWM(0, 10)
     
     # Set frequency to 1 kHz
