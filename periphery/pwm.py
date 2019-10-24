@@ -87,6 +87,16 @@ class PWM(object):
 
     def close(self):
         """Close the PWM."""
+
+        if self._channel is not None:
+            # Unexport the PWM channel
+            try:
+                unexport_fd = os.open("/sys/class/pwm/pwmchip{}/unexport".format(self._chip), os.O_WRONLY)
+                os.write(unexport_fd, b"%d\n" % self._channel)
+                os.close(unexport_fd)
+            except OSError as e:
+                raise PWMError(e.errno, "Unexporting PWM: " + e.strerror)
+
         self._chip = None
         self._channel = None
 
