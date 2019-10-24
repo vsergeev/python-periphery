@@ -134,6 +134,10 @@ def test_interactive():
     pwm.polarity = "normal"
     pwm.enabled = True
 
+    # Check tostring
+    print("PWM description: {}".format(str(pwm)))
+    assert raw_input("PWM description looks ok? y/n ") == "y"
+
     # Set 1 kHz frequency, 0.25 duty cycle
     pwm.frequency = 1e3
     pwm.duty_cycle = 0.25
