@@ -187,7 +187,7 @@ if __name__ == "__main__":
         print("   (Note that this will disable Bluetooth)")
         print("Use pins UART0 TXD (header pin 8) and UART0 RXD (header pin 10),")
         print("connect a loopback between TXD and RXD, and run this test with:")
-        print("    python -m tests.test_serial /dev/AMA0")
+        print("    python -m tests.test_serial /dev/ttyAMA0")
         print("")
         sys.exit(1)
 
