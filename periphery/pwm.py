@@ -85,7 +85,7 @@ class PWM(object):
         self._period = self._get_period()
 
     def close(self):
-        """Close the sysfs PWM."""
+        """Close the PWM."""
         self._chip = None
         self._channel = None
 
@@ -111,7 +111,7 @@ class PWM(object):
 
     @property
     def chip(self):
-        """Get the sysfs PWM chip number.
+        """Get the PWM chip number.
 
         :type: int
         """
@@ -119,7 +119,7 @@ class PWM(object):
 
     @property
     def channel(self):
-        """Get the sysfs PWM channel number.
+        """Get the PWM channel number.
 
         :type: int
         """
