@@ -13,20 +13,6 @@ class PWM(object):
     # Delay between check for scucessful PWM export on open (100ms)
     PWM_STAT_DELAY = 0.1
 
-    # Sysfs paths
-    _sysfs_path = "/sys/class/pwm/"
-    _chip_path = "pwmchip{}"
-
-    # Channel paths
-    _export_path = "export"
-    _channel_path = "pwm{}"
-
-    # Channel attribute paths
-    _channel_period_path = "period"
-    _channel_duty_cycle_path = "duty_cycle"
-    _channel_polarity_path = "polarity"
-    _channel_enable_path = "enable"
-
     def __init__(self, chip, channel):
         """Instantiate a PWM object and open the sysfs PWM corresponding to the
         specified chip and channel.
@@ -45,9 +31,9 @@ class PWM(object):
             TimeoutError: if waiting for PWM export times out.
 
         """
-
         self._chip = None
         self._channel = None
+        self._path = None
         self._open(chip, channel)
 
     def __del__(self):
@@ -65,16 +51,16 @@ class PWM(object):
         if not isinstance(channel, int):
             raise TypeError("Invalid channel type, should be integer.")
 
-        chip_path = os.path.join(self._sysfs_path, self._chip_path.format(chip))
-        if not os.path.isdir(chip_path):
-            raise LookupError("PWM chip does not exist, check that the required modules are loaded.")
+        chip_path = "/sys/class/pwm/pwmchip{}".format(chip)
+        channel_path = "/sys/class/pwm/pwmchip{}/pwm{}".format(chip, channel)
 
-        channel_path = os.path.join(chip_path, self._channel_path.format(channel))
+        if not os.path.isdir(chip_path):
+            raise LookupError("Opening PWM: PWM chip not found.")
 
         if not os.path.isdir(channel_path):
             # Export the PWM
             try:
-                with open(os.path.join(chip_path, self._export_path), "w") as f_export:
+                with open(os.path.join(chip_path, "export"), "w") as f_export:
                     f_export.write("%d\n" % channel)
             except IOError as e:
                 raise PWMError(e.errno, "Exporting PWM channel: " + e.strerror)
@@ -93,6 +79,7 @@ class PWM(object):
 
         self._chip = chip
         self._channel = channel
+        self._path = channel_path
 
         # Look up the period, for fast duty cycle updates
         self._period = self._get_period()
@@ -103,23 +90,11 @@ class PWM(object):
         self._channel = None
 
     def _write_channel_attr(self, attr, value):
-        path = os.path.join(
-            self._sysfs_path,
-            self._chip_path.format(self._chip),
-            self._channel_path.format(self._channel),
-            attr)
-
-        with open(path, 'w') as f_attr:
+        with open(os.path.join(self._path, attr), 'w') as f_attr:
             f_attr.write(value + "\n")
 
     def _read_channel_attr(self, attr):
-        path = os.path.join(
-            self._sysfs_path,
-            self._chip_path.format(self._chip),
-            self._channel_path.format(self._channel),
-            attr)
-
-        with open(path, 'r') as f_attr:
+        with open(os.path.join(self._path, attr), 'r') as f_attr:
             return f_attr.read().strip()
 
     # Methods
@@ -154,7 +129,7 @@ class PWM(object):
 
     def _get_period(self):
         try:
-            period_ns = int(self._read_channel_attr(self._channel_period_path))
+            period_ns = int(self._read_channel_attr("period"))
         except ValueError:
             raise PWMError(None, "Unknown period value: \"%s\"" % period_ns)
 
@@ -173,7 +148,7 @@ class PWM(object):
         # Convert period from seconds to integer nanoseconds
         period_ns = int(period * 1e9)
 
-        self._write_channel_attr(self._channel_period_path, "{}".format(period_ns))
+        self._write_channel_attr("period", str(period_ns))
 
         # Update our cached period
         self._period = float(period)
@@ -190,7 +165,7 @@ class PWM(object):
 
     def _get_duty_cycle(self):
         try:
-            duty_cycle_ns = int(self._read_channel_attr(self._channel_duty_cycle_path))
+            duty_cycle_ns = int(self._read_channel_attr("duty_cycle"))
         except ValueError:
             raise PWMError(None, "Unknown duty cycle value: \"%s\"" % duty_cycle_ns)
 
@@ -214,7 +189,7 @@ class PWM(object):
         # Convert duty cycle from seconds to integer nanoseconds
         duty_cycle_ns = int(duty_cycle * 1e9)
 
-        self._write_channel_attr(self._channel_duty_cycle_path, "{}".format(duty_cycle_ns))
+        self._write_channel_attr("duty_cycle", str(duty_cycle_ns))
 
     duty_cycle = property(_get_duty_cycle, _set_duty_cycle)
     """Get or set the PWM's output duty cycle as a ratio from 0.0 to 1.0.
@@ -247,7 +222,7 @@ class PWM(object):
     """
 
     def _get_polarity(self):
-        return self._read_channel_attr(self._channel_polarity_path)
+        return self._read_channel_attr("polarity")
 
     def _set_polarity(self, polarity):
         if not isinstance(polarity, str):
@@ -255,7 +230,7 @@ class PWM(object):
         elif polarity.lower() not in ["normal", "inversed"]:
             raise ValueError("Invalid polarity, can be: \"normal\" or \"inversed\".")
 
-        self._write_channel_attr(self._channel_polarity_path, polarity.lower())
+        self._write_channel_attr("polarity", polarity.lower())
 
     polarity = property(_get_polarity, _set_polarity)
     """Get or set the PWM's output polarity. Can be "normal" or "inversed".
@@ -269,7 +244,7 @@ class PWM(object):
     """
 
     def _get_enabled(self):
-        enabled = self._read_channel_attr(self._channel_enable_path)
+        enabled = self._read_channel_attr("enable")
 
         if enabled == "1":
             return True
@@ -280,9 +255,9 @@ class PWM(object):
 
     def _set_enabled(self, value):
         if not isinstance(value, bool):
-            raise TypeError("Invalid enabled type, should be string.")
+            raise TypeError("Invalid enabled type, should be bool.")
 
-        self._write_channel_attr(self._channel_enable_path, "1" if value else "0")
+        self._write_channel_attr("enable", "1" if value else "0")
 
     enabled = property(_get_enabled, _set_enabled)
     """Get or set the PWM's output enabled state.
