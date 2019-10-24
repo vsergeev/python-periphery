@@ -38,27 +38,60 @@ def test_open_close():
     assert pwm.chip == pwm_chip
     assert pwm.channel == pwm_channel
 
-    # Set period, check period and frequency
+    # Set period, check period, check period_ns, check frequency
     pwm.period = 1e-3
     assert (pwm.period - 1e-3) < 1e-4
+    assert (pwm.period_ns - 1000000) < 1e5
     assert (pwm.frequency - 1000) < 100
     pwm.period = 5e-4
     assert (pwm.period - 5e-4) < 1e-5
+    assert (pwm.period_ns - 500000) < 1e4
     assert (pwm.frequency - 2000) < 100
-    # Set frequency, check frequency and period
+
+    # Set frequency, check frequency, check period, check period_ns
     pwm.frequency = 1000
     assert (pwm.frequency - 1000) < 100
     assert (pwm.period - 1e-3) < 1e-4
+    assert (pwm.period_ns - 1000000) < 1e5
     pwm.frequency = 2000
     assert (pwm.frequency - 2000) < 100
     assert (pwm.period - 5e-4) < 1e-5
-    # Set duty cycle, check duty cycle
+    assert (pwm.period_ns - 500000) < 1e4
+
+    # Set period_ns, check period_ns, check period, check frequency
+    pwm.period_ns = 1000000
+    assert (pwm.period_ns - 1000000) < 1e5
+    assert (pwm.period - 1e-3) < 1e-4
+    assert (pwm.frequency - 1000) < 100
+    pwm.period_ns = 500000
+    assert (pwm.period_ns - 500000) < 1e4
+    assert (pwm.period - 5e-4) < 1e-5
+    assert (pwm.frequency - 2000) < 100
+
+    pwm.period_ns = 1000000
+
+    # Set duty cycle, check duty cycle, check duty_cycle_ns
     pwm.duty_cycle = 0.25
     assert (pwm.duty_cycle - 0.25) < 1e-3
+    assert (pwm.duty_cycle_ns - 250000) < 1e4
     pwm.duty_cycle = 0.50
     assert (pwm.duty_cycle - 0.50) < 1e-3
+    assert (pwm.duty_cycle_ns - 500000) < 1e4
     pwm.duty_cycle = 0.75
     assert (pwm.duty_cycle - 0.75) < 1e-3
+    assert (pwm.duty_cycle_ns - 750000) < 1e4
+
+    # Set duty_cycle_ns, check duty_cycle_ns, check duty_cycle
+    pwm.duty_cycle_ns = 250000
+    assert (pwm.duty_cycle_ns - 250000) < 1e4
+    assert (pwm.duty_cycle - 0.25) < 1e-3
+    pwm.duty_cycle_ns = 500000
+    assert (pwm.duty_cycle_ns - 500000) < 1e4
+    assert (pwm.duty_cycle - 0.50) < 1e-3
+    pwm.duty_cycle_ns = 750000
+    assert (pwm.duty_cycle_ns - 750000) < 1e4
+    assert (pwm.duty_cycle - 0.75) < 1e-3
+
     # Set polarity, check polarity
     pwm.polarity = "normal"
     assert pwm.polarity == "normal"

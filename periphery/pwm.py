@@ -34,6 +34,7 @@ class PWM(object):
         self._chip = None
         self._channel = None
         self._path = None
+        self._period_ns = None
         self._open(chip, channel)
 
     def __del__(self):
@@ -81,8 +82,8 @@ class PWM(object):
         self._channel = channel
         self._path = channel_path
 
-        # Look up the period, for fast duty cycle updates
-        self._period = self._get_period()
+        # Cache the period for fast duty cycle updates
+        self._period_ns = self._get_period_ns()
 
     def close(self):
         """Close the PWM."""
@@ -127,31 +128,73 @@ class PWM(object):
 
     # Mutable properties
 
-    def _get_period(self):
-        try:
-            period_ns = int(self._read_channel_attr("period"))
-        except ValueError:
-            raise PWMError(None, "Unknown period value: \"%s\"" % period_ns)
+    def _get_period_ns(self):
+        period_ns_str = self._read_channel_attr("period")
 
-        # Convert period from nanoseconds to seconds
-        period = period_ns / 1e9
+        try:
+            period_ns = int(period_ns_str)
+        except ValueError:
+            raise PWMError(None, "Unknown period value: \"%s\"" % period_ns_str)
 
         # Update our cached period
-        self._period = period
+        self._period_ns = period_ns
 
-        return period
+        return period_ns
+
+    def _set_period_ns(self, period_ns):
+        if not isinstance(period_ns, int):
+            raise TypeError("Invalid period type, should be int.")
+
+        self._write_channel_attr("period", str(period_ns))
+
+        # Update our cached period
+        self._period_ns = period_ns
+
+    period_ns = property(_get_period_ns, _set_period_ns)
+    """Get or set the PWM's output period in nanoseconds.
+
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not int.
+
+    :type: int
+    """
+
+    def _get_duty_cycle_ns(self):
+        duty_cycle_ns_str = self._read_channel_attr("duty_cycle")
+
+        try:
+            duty_cycle_ns = int(duty_cycle_ns_str)
+        except ValueError:
+            raise PWMError(None, "Unknown duty cycle value: \"%s\"" % duty_cycle_ns_str)
+
+        return duty_cycle_ns
+
+    def _set_duty_cycle_ns(self, duty_cycle_ns):
+        if not isinstance(duty_cycle_ns, int):
+            raise TypeError("Invalid duty cycle type, should be int.")
+
+        self._write_channel_attr("duty_cycle", str(duty_cycle_ns))
+
+    duty_cycle_ns = property(_get_duty_cycle_ns, _set_duty_cycle_ns)
+    """Get or set the PWM's output duty cycle in nanoseconds.
+
+    Raises:
+        PWMError: if an I/O or OS error occurs.
+        TypeError: if value type is not int.
+
+    :type: int
+    """
+
+    def _get_period(self):
+        return float(self.period_ns) / 1e9
 
     def _set_period(self, period):
         if not isinstance(period, (int, float)):
             raise TypeError("Invalid period type, should be int or float.")
 
         # Convert period from seconds to integer nanoseconds
-        period_ns = int(period * 1e9)
-
-        self._write_channel_attr("period", str(period_ns))
-
-        # Update our cached period
-        self._period = float(period)
+        self.period_ns = int(period * 1e9)
 
     period = property(_get_period, _set_period)
     """Get or set the PWM's output period in seconds.
@@ -164,18 +207,7 @@ class PWM(object):
     """
 
     def _get_duty_cycle(self):
-        try:
-            duty_cycle_ns = int(self._read_channel_attr("duty_cycle"))
-        except ValueError:
-            raise PWMError(None, "Unknown duty cycle value: \"%s\"" % duty_cycle_ns)
-
-        # Convert duty cycle from nanoseconds to seconds
-        duty_cycle = duty_cycle_ns / 1e9
-
-        # Convert duty cycle to ratio from 0.0 to 1.0
-        duty_cycle = duty_cycle / self._period
-
-        return duty_cycle
+        return float(self.duty_cycle_ns) / self._period_ns
 
     def _set_duty_cycle(self, duty_cycle):
         if not isinstance(duty_cycle, (int, float)):
@@ -183,13 +215,8 @@ class PWM(object):
         elif not 0.0 <= duty_cycle <= 1.0:
             raise ValueError("Invalid duty cycle value, should be between 0.0 and 1.0.")
 
-        # Convert duty cycle from ratio to seconds
-        duty_cycle = duty_cycle * self._period
-
-        # Convert duty cycle from seconds to integer nanoseconds
-        duty_cycle_ns = int(duty_cycle * 1e9)
-
-        self._write_channel_attr("duty_cycle", str(duty_cycle_ns))
+        # Convert duty cycle from ratio to nanoseconds
+        self.duty_cycle_ns = int(duty_cycle * self._period_ns)
 
     duty_cycle = property(_get_duty_cycle, _set_duty_cycle)
     """Get or set the PWM's output duty cycle as a ratio from 0.0 to 1.0.
