@@ -147,6 +147,10 @@ def test_interactive():
     print("Starting interactive test. Get out your logic analyzer, buddy!")
     raw_input("Press enter to continue...")
 
+    # Check tostring
+    print("Serial description: {}".format(str(serial)))
+    assert raw_input("Serial description looks ok? y/n ") == "y"
+
     serial.baudrate = 4800
     raw_input("Press enter to start transfer...")
     assert serial.write(buf) == len(buf)
