@@ -54,6 +54,10 @@ def test_interactive():
     print("Starting interactive test. Get out your logic analyzer, buddy!")
     raw_input("Press enter to continue...")
 
+    # Check tostring
+    print("I2C description: {}".format(str(i2c)))
+    assert raw_input("I2C description looks ok? y/n ") == "y"
+
     # There isn't much we can do without assuming a device on the other end,
     # because I2C needs an acknowledgement bit on each transferred byte.
     #
