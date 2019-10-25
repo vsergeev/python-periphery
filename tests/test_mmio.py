@@ -117,6 +117,11 @@ def test_interactive():
     print("Starting interactive test...")
 
     mmio = periphery.MMIO(RTCSS_BASE, PAGE_SIZE)
+
+    # Check tostring
+    print("MMIO description: {}".format(str(mmio)))
+    assert raw_input("MMIO description looks ok? y/n ") == "y"
+
     print("Waiting for seconds ones digit to reset to 0...\n")
 
     # Wait until seconds low go to 0, so we don't have to deal with
