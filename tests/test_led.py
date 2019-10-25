@@ -77,6 +77,10 @@ def test_interactive():
 
     raw_input("Press enter to continue...")
 
+    # Check tostring
+    print("LED description: {}".format(str(led)))
+    assert raw_input("LED description looks ok? y/n ") == "y"
+
     # Turn LED off
     led.write(False)
     assert raw_input("LED is off? y/n ") == "y"
