@@ -97,6 +97,10 @@ def test_interactive():
     print("Starting interactive test. Get out your logic analyzer, buddy!")
     raw_input("Press enter to continue...")
 
+    # Check tostring
+    print("SPI description: {}".format(str(spi)))
+    assert raw_input("SPI description looks ok? y/n ") == "y"
+
     # Mode 0 transfer
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
