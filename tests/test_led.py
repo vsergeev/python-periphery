@@ -89,6 +89,10 @@ def test_interactive():
     led.write(False)
     assert raw_input("LED is off? y/n ") == "y"
 
+    # Turn LED on
+    led.write(True)
+    assert raw_input("LED is on? y/n ") == "y"
+
     led.close()
 
     print("Interactive test passed.")
