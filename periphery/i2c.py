@@ -79,7 +79,7 @@ class I2C(object):
         buf = array.array('I', [0])
         try:
             fcntl.ioctl(self._fd, I2C._I2C_IOC_FUNCS, buf, True)
-        except OSError as e:
+        except (OSError, IOError) as e:
             self.close()
             raise I2CError(e.errno, "Querying supported functions: " + e.strerror)
 
@@ -133,7 +133,7 @@ class I2C(object):
         # Transfer
         try:
             fcntl.ioctl(self._fd, I2C._I2C_IOC_RDWR, i2c_xfer, False)
-        except IOError as e:
+        except (OSError, IOError) as e:
             raise I2CError(e.errno, "I2C transfer: " + e.strerror)
 
         # Update any read I2C.Message messages
