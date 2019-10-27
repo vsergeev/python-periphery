@@ -292,7 +292,7 @@ class Serial(object):
         buf = array.array('I', [0])
         try:
             fcntl.ioctl(self._fd, termios.TIOCINQ, buf, True)
-        except OSError as e:
+        except (OSError, IOError) as e:
             raise SerialError(e.errno, "Querying input waiting: " + e.strerror)
 
         return buf[0]
@@ -311,7 +311,7 @@ class Serial(object):
         buf = array.array('I', [0])
         try:
             fcntl.ioctl(self._fd, termios.TIOCOUTQ, buf, True)
-        except OSError as e:
+        except (OSError, IOError) as e:
             raise SerialError(e.errno, "Querying output waiting: " + e.strerror)
 
         return buf[0]
