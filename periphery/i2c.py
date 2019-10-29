@@ -86,7 +86,7 @@ class I2C(object):
         # Check that I2C_RDWR ioctl() is supported on this device
         if (buf[0] & I2C._I2C_FUNC_I2C) == 0:
             self.close()
-            raise I2CError(None, "I2C not supported on device %s." % devpath)
+            raise I2CError(None, "I2C not supported on device \"{:s}\"".format(devpath))
 
     # Methods
 
@@ -186,7 +186,7 @@ class I2C(object):
     # String representation
 
     def __str__(self):
-        return "I2C (device=%s, fd=%d)" % (self.devpath, self.fd)
+        return "I2C (device={:s}, fd={:d})".format(self.devpath, self.fd)
 
     class Message:
         def __init__(self, data, read=False, flags=0):
