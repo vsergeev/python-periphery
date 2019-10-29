@@ -102,8 +102,8 @@ spi = SPI("/dev/spidev1.0", 0, 1000000)
 data_out = [0xaa, 0xbb, 0xcc, 0xdd]
 data_in = spi.transfer(data_out)
 
-print("shifted out [0x%02x, 0x%02x, 0x%02x, 0x%02x]" % tuple(data_out))
-print("shifted in  [0x%02x, 0x%02x, 0x%02x, 0x%02x]" % tuple(data_in))
+print("shifted out [0x{:02x}, 0x{:02x}, 0x{:02x}, 0x{:02x}]".format(*data_out))
+print("shifted in  [0x{:02x}, 0x{:02x}, 0x{:02x}, 0x{:02x}]".format(*data_in))
 
 spi.close()
 ```
@@ -121,7 +121,7 @@ i2c = I2C("/dev/i2c-0")
 # Read byte at address 0x100 of EEPROM at 0x50
 msgs = [I2C.Message([0x01, 0x00]), I2C.Message([0x00], read=True)]
 i2c.transfer(0x50, msgs)
-print("0x100: 0x%02x" % msgs[1].data[0])
+print("0x100: 0x{:02x}".format(msgs[1].data[0]))
 
 i2c.close()
 ```
@@ -141,7 +141,7 @@ rtc_secs = rtc_mmio.read32(0x00)
 rtc_mins = rtc_mmio.read32(0x04)
 rtc_hrs = rtc_mmio.read32(0x08)
 
-print("hours: %02x minutes: %02x seconds: %02x" % (rtc_hrs, rtc_mins, rtc_secs))
+print("hours: {:02x} minutes: {:02x} seconds: {:02x}".format(rtc_hrs, rtc_mins, rtc_secs))
 
 rtc_mmio.close()
 
@@ -152,7 +152,7 @@ ctrl_mmio = MMIO(0x44E10000, 0x1000)
 mac_id0_lo = ctrl_mmio.read32(0x630)
 mac_id0_hi = ctrl_mmio.read32(0x634)
 
-print("MAC address: %04x%08x" % (mac_id0_lo, mac_id0_hi))
+print("MAC address: {:04x}{:08x}".format(mac_id0_lo, mac_id0_hi))
 
 ctrl_mmio.close()
 ```
@@ -171,7 +171,7 @@ serial.write(b"Hello World!")
 
 # Read up to 128 bytes with 500ms timeout
 buf = serial.read(128, 0.5)
-print("read %d bytes: _%s_" % (len(buf), buf))
+print("read {:d} bytes: _{:s}_".format(len(buf), buf))
 
 serial.close()
 ```
