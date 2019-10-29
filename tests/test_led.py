@@ -25,8 +25,8 @@ def test_arguments():
 def test_open_close():
     print("Starting open/close test...")
 
-    # Open non-existent LED (export should fail with EINVAL)
-    with AssertRaises(ValueError):
+    # Open non-existent LED
+    with AssertRaises(LookupError):
         periphery.LED("invalid_led_XXX", 0)
 
     # Open legitimate LED

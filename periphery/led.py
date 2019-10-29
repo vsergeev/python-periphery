@@ -25,6 +25,7 @@ class LED(object):
         Raises:
             LEDError: if an I/O or OS error occurs.
             TypeError: if `name` or `brightness` types are invalid.
+            LookupError: if LED name does not exist.
             ValueError: if `brightness` value is invalid.
 
         """
@@ -51,7 +52,7 @@ class LED(object):
         led_path = "/sys/class/leds/%s" % name
 
         if not os.path.isdir(led_path):
-            raise ValueError("LED %s not found!" % name)
+            raise LookupError("Opening LED: LED \"%s\" not found." % name)
 
         # Read max brightness
         try:
