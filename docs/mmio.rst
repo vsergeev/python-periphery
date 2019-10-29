@@ -16,7 +16,7 @@ Code Example
     rtc_mins = rtc_mmio.read32(0x04)
     rtc_hrs = rtc_mmio.read32(0x08)
     
-    print("hours: %02x minutes: %02x seconds: %02x" % (rtc_hrs, rtc_mins, rtc_secs))
+    print("hours: {:02x} minutes: {:02x} seconds: {:02x}".format(rtc_hrs, rtc_mins, rtc_secs))
     
     rtc_mmio.close()
     
@@ -27,7 +27,7 @@ Code Example
     mac_id0_lo = ctrl_mmio.read32(0x630)
     mac_id0_hi = ctrl_mmio.read32(0x634)
     
-    print("MAC address: %04x%08x" % (mac_id0_lo, mac_id0_hi))
+    print("MAC address: {:04x}{:08x}".format(mac_id0_lo, mac_id0_hi))
     
     ctrl_mmio.close()
 

@@ -14,7 +14,7 @@ Code Example
     # Read byte at address 0x100 of EEPROM at 0x50
     msgs = [I2C.Message([0x01, 0x00]), I2C.Message([0x00], read=True)]
     i2c.transfer(0x50, msgs)
-    print("0x100: 0x%02x" % msgs[1].data[0])
+    print("0x100: 0x{:02x}".format(msgs[1].data[0]))
     
     i2c.close()
 

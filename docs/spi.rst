@@ -14,8 +14,8 @@ Code Example
     data_out = [0xaa, 0xbb, 0xcc, 0xdd]
     data_in = spi.transfer(data_out)
     
-    print("shifted out [0x%02x, 0x%02x, 0x%02x, 0x%02x]" % tuple(data_out))
-    print("shifted in  [0x%02x, 0x%02x, 0x%02x, 0x%02x]" % tuple(data_in))
+    print("shifted out [0x{:02x}, 0x{:02x}, 0x{:02x}, 0x{:02x}]".format(*data_out))
+    print("shifted in  [0x{:02x}, 0x{:02x}, 0x{:02x}, 0x{:02x}]".format(*data_in))
     
     spi.close()
 
