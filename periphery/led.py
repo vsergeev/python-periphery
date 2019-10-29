@@ -1,4 +1,5 @@
 import os
+import os.path
 
 
 class LEDError(IOError):
@@ -56,18 +57,17 @@ class LED(object):
 
         # Read max brightness
         try:
-            with open("/sys/class/leds/%s/max_brightness" % name, "r") as f_max_brightness:
-                max_brightness = int(f_max_brightness.read())
+            with open(os.path.join(led_path, "max_brightness"), "r") as f_max_brightness:
+                self._max_brightness = int(f_max_brightness.read())
         except IOError as e:
             raise LEDError(e.errno, "Reading LED max brightness: " + e.strerror)
 
         # Open brightness
         try:
-            self._fd = os.open("/sys/class/leds/%s/brightness" % name, os.O_RDWR)
+            self._fd = os.open(os.path.join(led_path, "brightness"), os.O_RDWR)
         except OSError as e:
             raise LEDError(e.errno, "Opening LED brightness: " + e.strerror)
 
-        self._max_brightness = max_brightness
         self._name = name
 
         # Set initial brightness
