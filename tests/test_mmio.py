@@ -133,13 +133,13 @@ def test_interactive():
 
     bcd2dec = lambda x: 10 * ((x >> 4) & 0xf) + (x & 0xf)
 
-    print("Date: %04d-%02d-%02d" % (2000 + bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
-    print("Time: %02d:%02d:%02d" % (bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
+    print("Date: {:04d}-{:02d}-{:02d}".format(2000 + bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
+    print("Time: {:02d}:{:02d}:{:02d}".format(bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
 
     periphery.sleep(3)
 
-    print("Date: %04d-%02d-%02d" % (2000 + bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
-    print("Time: %02d:%02d:%02d" % (bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
+    print("Date: {:04d}-{:02d}-{:02d}".format(2000 + bcd2dec(mmio.read32(0x14)), bcd2dec(mmio.read32(0x10)), bcd2dec(mmio.read32(0x0c))))
+    print("Time: {:02d}:{:02d}:{:02d}".format(bcd2dec(mmio.read32(0x08) & 0x7f), bcd2dec(mmio.read32(0x04)), bcd2dec(mmio.read32(0x00))))
 
     toc = time.time()
     rtc_toc = mmio.read32(0x00) & 0xf
