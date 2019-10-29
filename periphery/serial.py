@@ -85,7 +85,7 @@ class Serial(object):
             raise TypeError("Invalid rtscts type, should be boolean.")
 
         if baudrate not in Serial._BAUDRATE_TO_OSPEED:
-            raise ValueError("Unknown baud rate %d." % baudrate)
+            raise ValueError("Unknown baud rate: {:d}".format(baudrate))
         elif databits not in [5, 6, 7, 8]:
             raise ValueError("Invalid data bits, can be 5, 6, 7, 8.")
         elif parity.lower() not in ["none", "even", "odd"]:
@@ -361,7 +361,7 @@ class Serial(object):
             raise SerialError(e.errno, "Getting serial port attributes: " + e.strerror)
 
         if ospeed not in Serial._OSPEED_TO_BAUDRATE:
-            raise SerialError(None, "Unknown baud rate: ospeed 0x%x." % ospeed)
+            raise SerialError(None, "Unknown baud rate: ospeed 0x{:x}".format(ospeed))
 
         return Serial._OSPEED_TO_BAUDRATE[ospeed]
 
@@ -370,7 +370,7 @@ class Serial(object):
             raise TypeError("Invalid baud rate type, should be integer.")
 
         if baudrate not in Serial._BAUDRATE_TO_OSPEED:
-            raise ValueError("Unknown baud rate %d." % baudrate)
+            raise ValueError("Unknown baud rate: {:d}".format(baudrate))
 
         # Get tty attributes
         try:
@@ -411,7 +411,7 @@ class Serial(object):
         cs = cflag & termios.CSIZE
 
         if cs not in Serial._CFLAG_TO_DATABITS:
-            raise SerialError(None, "Unknown data bits setting: csize 0x%x." % cs)
+            raise SerialError(None, "Unknown data bits setting: csize 0x{:x}".format(cs))
 
         return Serial._CFLAG_TO_DATABITS[cs]
 
@@ -637,4 +637,5 @@ class Serial(object):
     # String representation
 
     def __str__(self):
-        return "Serial (device=%s, fd=%d, baudrate=%d, databits=%d, parity=%s, stopbits=%d, xonxoff=%s, rtscts=%s)" % (self.devpath, self.fd, self.baudrate, self.databits, self.parity, self.stopbits, str(self.xonxoff), str(self.rtscts))
+        return "Serial (device={:s}, fd={:d}, baudrate={:d}, databits={:d}, parity={:s}, stopbits={:d}, xonxoff={:s}, rtscts={:s})" \
+            .format(self.devpath, self.fd, self.baudrate, self.databits, self.parity, self.stopbits, str(self.xonxoff), str(self.rtscts))
