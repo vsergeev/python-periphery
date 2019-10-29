@@ -306,4 +306,4 @@ class MMIO(object):
     # String representation
 
     def __str__(self):
-        return "MMIO 0x%08x (size=%d)" % (self.base, self.size)
+        return "MMIO 0x{:08x} (size={:d})".format(self.base, self.size)
