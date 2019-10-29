@@ -111,6 +111,14 @@ class PWM(object):
     # Immutable properties
 
     @property
+    def devpath(self):
+        """Get the device path of the underlying sysfs PWM device.
+
+        :type: str
+        """
+        return self._path
+
+    @property
     def chip(self):
         """Get the PWM chip number.
 
