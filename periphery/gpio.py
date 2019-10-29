@@ -445,7 +445,7 @@ class CdevGPIO(GPIO):
             if line_info.name.decode() == line:
                 return i
 
-        raise LookupError("Opening GPIO line: GPIO line \"%s\" not found by name." % line)
+        raise LookupError("Opening GPIO line: GPIO line \"{:s}\" not found by name.".format(line))
 
     # Methods
 
@@ -647,8 +647,8 @@ class CdevGPIO(GPIO):
         except GPIOError:
             str_chip_label = "<error>"
 
-        return "GPIO %d (name=\"%s\", device=%s, line_fd=%d, chip_fd=%d, direction=%s, edge=%s, chip_name=\"%s\", chip_label=\"%s\", type=cdev)" % \
-            (self._line, str_name, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_chip_name, str_chip_label)
+        return "GPIO {:d} (name=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
+            .format(self._line, str_name, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_chip_name, str_chip_label)
 
 
 class SysfsGPIO(GPIO):
@@ -698,13 +698,13 @@ class SysfsGPIO(GPIO):
         if direction.lower() not in ["in", "out", "high", "low"]:
             raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
 
-        gpio_path = "/sys/class/gpio/gpio%d" % line
+        gpio_path = "/sys/class/gpio/gpio{:d}".format(line)
 
         if not os.path.isdir(gpio_path):
             # Export the line
             try:
                 with open("/sys/class/gpio/export", "w") as f_export:
-                    f_export.write("%d\n" % line)
+                    f_export.write("{:d}\n".format(line))
             except IOError as e:
                 raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
 
@@ -718,7 +718,7 @@ class SysfsGPIO(GPIO):
                 time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
 
             if not exported:
-                raise TimeoutError("Exporting GPIO: waiting for '%s' timed out" % gpio_path)
+                raise TimeoutError("Exporting GPIO: waiting for \"{:s}\" timed out".format(gpio_path))
 
             # Write direction, looping in case of EACCES errors due to delayed udev
             # permission rule application after export
@@ -769,7 +769,7 @@ class SysfsGPIO(GPIO):
         elif buf[0] == b"1"[0]:
             return True
 
-        raise GPIOError(None, "Unknown GPIO value: \"%s\"" % buf[0])
+        raise GPIOError(None, "Unknown GPIO value: {}".format(buf))
 
     def write(self, value):
         if not isinstance(value, bool):
@@ -834,7 +834,7 @@ class SysfsGPIO(GPIO):
         # Unexport the line
         try:
             unexport_fd = os.open("/sys/class/gpio/unexport", os.O_WRONLY)
-            os.write(unexport_fd, b"%d\n" % self._line)
+            os.write(unexport_fd, "{:d}\n".format(self._line).encode())
             os.close(unexport_fd)
         except OSError as e:
             raise GPIOError(e.errno, "Unexporting GPIO: " + e.strerror)
@@ -868,13 +868,13 @@ class SysfsGPIO(GPIO):
         gpiochip_path = os.readlink(gpio_path)
 
         if '/' not in gpiochip_path:
-            raise GPIOError(None, "Reading gpiochip name: invalid device symlink \"%s\"" % gpiochip_path)
+            raise GPIOError(None, "Reading gpiochip name: invalid device symlink \"{:s}\"".format(gpiochip_path))
 
         return gpiochip_path.split('/')[-1]
 
     @property
     def chip_label(self):
-        gpio_path = "/sys/class/gpio/%s/label" % self.chip_name
+        gpio_path = "/sys/class/gpio/{:s}/label".format(self.chip_name)
 
         try:
             with open(gpio_path, "r") as f_label:
@@ -962,5 +962,5 @@ class SysfsGPIO(GPIO):
         except GPIOError:
             str_chip_label = "<error>"
 
-        return "GPIO %d (device=%s, fd=%d, direction=%s, edge=%s, chip_name=\"%s\", chip_label=\"%s\", type=sysfs)" % \
-            (self._line, self._path, self._fd, str_direction, str_edge, str_chip_name, str_chip_label)
+        return "GPIO {:d} (device={:s}, fd={:d}, direction={:s}, edge={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=sysfs)" \
+            .format(self._line, self._path, self._fd, str_direction, str_edge, str_chip_name, str_chip_label)
