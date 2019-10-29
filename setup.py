@@ -5,7 +5,7 @@ except ImportError:
 
 setup(
     name='python-periphery',
-    version='1.1.2',
+    version='2.0.0',
     description='A pure Python 2/3 library for peripheral I/O (GPIO, LED, PWM, SPI, I2C, MMIO, Serial) in Linux.',
     author='vsergeev',
     author_email='v@sergeev.io',
