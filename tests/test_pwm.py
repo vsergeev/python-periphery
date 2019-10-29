@@ -38,6 +38,9 @@ def test_open_close():
     assert pwm.chip == pwm_chip
     assert pwm.channel == pwm_channel
 
+    # Initialize duty cycle to 0
+    pwm.duty_cycle = 0
+
     # Set period, check period, check period_ns, check frequency
     pwm.period = 1e-3
     assert abs(pwm.period - 1e-3) < 1e-4
