@@ -8,9 +8,9 @@ Code Example
 
     from periphery import GPIO
     
-    # Open GPIO /dev/gpiochip0 10 with input direction
+    # Open GPIO /dev/gpiochip0 line 10 with input direction
     gpio_in = GPIO("/dev/gpiochip0", 10, "in")
-    # Open GPIO /dev/gpiochip0 12 with output direction
+    # Open GPIO /dev/gpiochip0 line 12 with output direction
     gpio_out = GPIO("/dev/gpiochip0", 12, "out")
     
     value = gpio_in.read()
