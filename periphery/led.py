@@ -51,10 +51,10 @@ class LED(object):
         if not isinstance(brightness, (bool, int, type(None))):
             raise TypeError("Invalid brightness type, should be bool, int, or None.")
 
-        led_path = "/sys/class/leds/%s" % name
+        led_path = "/sys/class/leds/{:s}".format(name)
 
         if not os.path.isdir(led_path):
-            raise LookupError("Opening LED: LED \"%s\" not found." % name)
+            raise LookupError("Opening LED: LED \"{:s}\" not found.".format(name))
 
         # Read max brightness
         try:
@@ -123,11 +123,11 @@ class LED(object):
             brightness = self._max_brightness if brightness else 0
         else:
             if not 0 <= brightness <= self._max_brightness:
-                raise ValueError("Invalid brightness value, should be between 0 and %d." % self._max_brightness)
+                raise ValueError("Invalid brightness value: should be between 0 and {:d}".format(self._max_brightness))
 
         # Write value
         try:
-            os.write(self._fd, b"%d\n" % brightness)
+            os.write(self._fd, "{:d}\n".format(brightness).encode())
         except OSError as e:
             raise LEDError(e.errno, "Writing LED brightness: " + e.strerror)
 
@@ -215,4 +215,4 @@ class LED(object):
     # String representation
 
     def __str__(self):
-        return "LED %s (device=%s, fd=%d, max_brightness=%d)" % (self._name, self._path, self._fd, self._max_brightness)
+        return "LED {:s} (device={:s}, fd={:d}, max_brightness={:d})".format(self._name, self._path, self._fd, self._max_brightness)
