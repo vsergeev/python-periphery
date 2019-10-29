@@ -30,6 +30,7 @@ class LED(object):
             ValueError: if `brightness` value is invalid.
 
         """
+        self._path = None
         self._fd = None
         self._name = None
         self._max_brightness = None
@@ -69,6 +70,7 @@ class LED(object):
             raise LEDError(e.errno, "Opening LED brightness: " + e.strerror)
 
         self._name = name
+        self._path = led_path
 
         # Set initial brightness
         if brightness:
@@ -155,6 +157,14 @@ class LED(object):
     # Immutable properties
 
     @property
+    def devpath(self):
+        """Get the device path of the underlying sysfs LED device.
+
+        :type: str
+        """
+        return self._path
+
+    @property
     def fd(self):
         """Get the file descriptor for the underlying sysfs LED "brightness"
         file of the LED object.
@@ -205,4 +215,4 @@ class LED(object):
     # String representation
 
     def __str__(self):
-        return "LED %s (fd=%d, max_brightness=%d)" % (self._name, self._fd, self._max_brightness)
+        return "LED %s (device=%s, fd=%d, max_brightness=%d)" % (self._name, self._path, self._fd, self._max_brightness)
