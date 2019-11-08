@@ -1,3 +1,4 @@
+import errno
 import os
 import time
 
@@ -77,6 +78,25 @@ class PWM(object):
 
             if not exported:
                 raise TimeoutError("Exporting PWM: waiting for \"{:s}\" timed out".format(channel_path))
+
+            # Loop until period is writable. This could take some time after export as
+            # application of udev rules after export is asynchronous.
+            period_path = os.path.join(channel_path, "period")
+            period_error = None
+            for i in range(PWM.PWM_STAT_RETRIES):
+                try:
+                    with open(period_path, 'w'):
+                        period_error = None
+                        break
+                except IOError as e:
+                    period_error = e
+                    if e.errno != errno.EACCES:
+                        break
+
+                time.sleep(PWM.PWM_STAT_DELAY)
+
+            if period_error:
+                raise PWMError(period_error.errno, "{:s}: {:s}".format(period_error.strerror, period_path))
 
         self._chip = chip
         self._channel = channel
