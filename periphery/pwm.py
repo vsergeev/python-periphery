@@ -87,7 +87,7 @@ class PWM(object):
                         break
                 except IOError as e:
                     if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == PWM.PWM_STAT_RETRIES - 1):
-                        raise PWMError(e.errno, "Opening GPIO period: " + e.strerror)
+                        raise PWMError(e.errno, "Opening PWM period: " + e.strerror)
 
                 time.sleep(PWM.PWM_STAT_DELAY)
 
