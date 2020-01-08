@@ -35,6 +35,16 @@ def test_open_close():
     assert led.fd > 0
     assert led.max_brightness > 0
 
+    # Set brightness to True, check brightness
+    led.write(True)
+    time.sleep(0.01)
+    assert led.read() == led.max_brightness
+
+    # Set brightness to False, check brightness
+    led.write(False)
+    time.sleep(0.01)
+    assert led.read() == 0
+
     # Set brightness to 1, check brightness
     led.write(1)
     time.sleep(0.01)
@@ -54,16 +64,6 @@ def test_open_close():
     led.brightness = 0
     time.sleep(0.01)
     assert led.brightness == 0
-
-    # Set brightness to True, check brightness
-    led.write(True)
-    time.sleep(0.01)
-    assert led.read() == led.max_brightness
-
-    # Set brightness to False, check brightness
-    led.write(False)
-    time.sleep(0.01)
-    assert led.read() == 0
 
     led.close()
 
