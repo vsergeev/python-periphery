@@ -1,3 +1,10 @@
+* v2.0.1 - 01/08/2020
+    * PWM
+        * Add retry loop for opening PWM period file after export to
+          accommodate delayed udev permission rule application.
+    * Contributors
+        * Jonas Larsson, @jonasl - 28653d4
+
 * v2.0.0 - 10/28/2019
     * GPIO
         * Add support for character device GPIOs.
