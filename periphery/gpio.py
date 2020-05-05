@@ -110,6 +110,70 @@ class GPIO(object):
         """
         raise NotImplementedError()
 
+    @staticmethod
+    def poll_multiple(gpios, timeout=None):
+        """Poll multiple GPIOs for the edge event configured with the .edge
+        property with an optional timeout.
+
+        For character device GPIOs, the edge event should be consumed with
+        `read_event()`. For sysfs GPIOs, the edge event should be consumed with
+        `read()`.
+
+        `timeout` can be a positive number for a timeout in seconds, zero for a
+        non-blocking poll, or negative or None for a blocking poll. Default is
+        a blocking poll.
+
+        Args:
+            gpios (list): list of GPIO objects to poll.
+            timeout (int, float, None): timeout duration in seconds.
+
+        Returns:
+            list: list of GPIO objects for which an edge event occurred.
+
+        Raises:
+            GPIOError: if an I/O or OS error occurs.
+            TypeError: if `timeout` type is not None or int.
+
+        """
+        if not isinstance(timeout, (int, float, type(None))):
+            raise TypeError("Invalid timeout type, should be integer, float, or None.")
+
+        # Setup poll
+        p = select.poll()
+
+        # Register GPIO file descriptors and build map of fd to object
+        fd_gpio_map = {}
+        for gpio in gpios:
+            if isinstance(gpio, SysfsGPIO):
+                p.register(gpio.fd, select.POLLPRI | select.POLLERR)
+            else:
+                p.register(gpio.fd, select.POLLIN | select.POLLRDNORM)
+
+            fd_gpio_map[gpio.fd] = gpio
+
+        # Scale timeout to milliseconds
+        if isinstance(timeout, (int, float)) and timeout > 0:
+            timeout *= 1000
+
+        # Poll
+        events = p.poll(timeout)
+
+        # Gather GPIOs that had edge events occur
+        results = []
+        for (fd, _) in events:
+            gpio = fd_gpio_map[fd]
+
+            results.append(gpio)
+
+            if isinstance(gpio, SysfsGPIO):
+                # Rewind for read
+                try:
+                    os.lseek(fd, 0, os.SEEK_SET)
+                except OSError as e:
+                    raise GPIOError(e.errno, "Rewinding GPIO: " + e.strerror)
+
+        return results
+
     def close(self):
         """Close the sysfs GPIO.
 

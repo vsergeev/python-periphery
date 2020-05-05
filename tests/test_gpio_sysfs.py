@@ -164,6 +164,25 @@ def test_loopback():
     print("Check poll timeout")
     assert gpio_in.poll(1) == False
 
+    # Check poll falling 1 -> 0 interrupt with the poll_multiple() API
+    print("Check poll falling 1 -> 0 interrupt with poll_multiple()")
+    gpio_out.write(False)
+    gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
+    assert gpios_ready == [gpio_in]
+    assert gpio_in.read() == False
+
+    # Check poll rising 0 -> 1 interrupt with the poll_multiple() API
+    print("Check poll rising 0 -> 1 interrupt with poll_multiple()")
+    gpio_out.write(True)
+    gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
+    assert gpios_ready == [gpio_in]
+    assert gpio_in.read() == True
+
+    # Check poll timeout
+    print("Check poll timeout with poll_multiple()")
+    gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
+    assert gpios_ready == []
+
     gpio_in.close()
     gpio_out.close()
 
