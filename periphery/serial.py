@@ -194,10 +194,7 @@ class Serial(object):
         """
         data = b""
 
-        # Read length bytes if timeout is None
-
-        # Read up to length bytes if timeout is not None
-        while True:
+        while len(data) < length:
             if timeout is not None:
                 # Select
                 (rlist, _, _) = select.select([self._fd], [], [], timeout)
@@ -209,9 +206,6 @@ class Serial(object):
                 data += os.read(self._fd, length - len(data))
             except OSError as e:
                 raise SerialError(e.errno, "Reading serial port: " + e.strerror)
-
-            if len(data) == length:
-                break
 
         return data
 
