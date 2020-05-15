@@ -195,12 +195,9 @@ class Serial(object):
         data = b""
 
         while len(data) < length:
-            if timeout is not None:
-                # Select
-                (rlist, _, _) = select.select([self._fd], [], [], timeout)
-                # If timeout
-                if self._fd not in rlist:
-                    break
+            (rlist, _, _) = select.select([self._fd], [], [], timeout)
+            if self._fd not in rlist:
+                break
 
             try:
                 data += os.read(self._fd, length - len(data))
