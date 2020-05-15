@@ -684,6 +684,7 @@ class SysfsGPIO(GPIO):
         """
         self._fd = None
         self._line = None
+        self._exported = False
 
         self._open(line, direction)
 
@@ -709,15 +710,14 @@ class SysfsGPIO(GPIO):
                 raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
 
             # Loop until GPIO is exported
-            exported = False
             for i in range(SysfsGPIO.GPIO_OPEN_RETRIES):
                 if os.path.isdir(gpio_path):
-                    exported = True
+                    self._exported = True
                     break
 
                 time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
 
-            if not exported:
+            if not self._exported:
                 raise TimeoutError("Exporting GPIO: waiting for \"{:s}\" timed out".format(gpio_path))
 
             # Write direction, looping in case of EACCES errors due to delayed udev
@@ -831,13 +831,14 @@ class SysfsGPIO(GPIO):
 
         self._fd = None
 
-        # Unexport the line
-        try:
-            unexport_fd = os.open("/sys/class/gpio/unexport", os.O_WRONLY)
-            os.write(unexport_fd, "{:d}\n".format(self._line).encode())
-            os.close(unexport_fd)
-        except OSError as e:
-            raise GPIOError(e.errno, "Unexporting GPIO: " + e.strerror)
+        if self._exported:
+            # Unexport the line
+            try:
+                unexport_fd = os.open("/sys/class/gpio/unexport", os.O_WRONLY)
+                os.write(unexport_fd, "{:d}\n".format(self._line).encode())
+                os.close(unexport_fd)
+            except OSError as e:
+                raise GPIOError(e.errno, "Unexporting GPIO: " + e.strerror)
 
     # Immutable properties
 
