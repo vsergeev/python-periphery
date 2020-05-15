@@ -200,9 +200,14 @@ class Serial(object):
                 break
 
             try:
-                data += os.read(self._fd, length - len(data))
+                chunk = os.read(self._fd, length - len(data))
             except OSError as e:
                 raise SerialError(e.errno, "Reading serial port: " + e.strerror)
+
+            if not chunk:
+                raise SerialError(0, "Reading serial port: unexpected empty read")
+
+            data += chunk
 
         return data
 
