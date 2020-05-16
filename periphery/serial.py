@@ -639,18 +639,18 @@ class Serial(object):
 
         return cc[termios.VMIN]
 
-    def _set_vmin(self, val):
-        if type(val) is not int:
-            raise TypeError("Given type of `vmin` should be `int`")
-        if not (0 <= val <= 255):
-            raise ValueError("Value of a `vmin` not in range 0 .. 255 ")
+    def _set_vmin(self, vmin):
+        if not isinstance(vmin, int):
+            raise TypeError("Invalid vmin type, should be integer.")
+        elif not (0 <= vmin <= 255):
+            raise ValueError("Invalid vmin, can be 0 to 255.")
 
         try:
             iflag, oflag, cflag, lflag, ispeed, ospeed, cc = termios.tcgetattr(self._fd)
         except termios.error as e:
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
-        cc[termios.VMIN] = val
+        cc[termios.VMIN] = vmin
 
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
@@ -658,14 +658,19 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     vmin = property(_get_vmin, _set_vmin)
-    """ Minimum number of bytes to continue read operation. In blocking read mode
-        (timeout=None) it allows not to return control from the `read` method if
-        at least the number of bytes specified by this field is not received.
+    """Get or set the VMIN termios setting for minimum number of bytes returned
+    from a blocking read. Can be between 0 and 255.
+
+    When configured in conjunction with VTIME, VTIME acts as an interbyte
+    timeout that restarts on every byte received, and a blocking read will
+    block until at least VMIN bytes are read or the VTIME timeout expires after
+    the last byte read. See the `termios` man page for more information.
 
     Raises:
         SerialError: if an I/O or OS error occurs.
-        ValueError: if given value of the `vmin` is not in range 0 .. 255
-        TypeError: if given type of `vmin` is not `int`
+        TypeError: if `vmin` type is not int.
+        ValueError: if `vmin` value is invalid.
+
     :type: int
     """
 
@@ -677,19 +682,18 @@ class Serial(object):
 
         return float(cc[termios.VTIME]) / 10.0
 
-    def _set_vtime(self, val):
-        if type(val) not in (int, float):
-            raise TypeError("Given type of `vtime` should be `int` or `float`")
-        val = float(val)
-        if not (0.0 <= val <= 25.5):
-            raise ValueError("Value of a `vtime` not in range 0 .. 25.5 seconds")
+    def _set_vtime(self, vtime):
+        if not isinstance(vtime, (float, int)):
+            raise TypeError("Invalid vtime type, should be float or integer.")
+        elif not (0 <= vtime <= 25.5):
+            raise ValueError("Invalid vtime, can be 0 to 25.5 seconds.")
 
         try:
             iflag, oflag, cflag, lflag, ispeed, ospeed, cc = termios.tcgetattr(self._fd)
         except termios.error as e:
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
-        cc[termios.VTIME] = int(float(val) * 10.0)
+        cc[termios.VTIME] = int(float(vtime) * 10.0)
 
         try:
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
@@ -697,20 +701,19 @@ class Serial(object):
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
     vtime = property(_get_vtime, _set_vtime)
-    """ Inter-char timeout in seconds. An inter-char timer is started when a
-        character arrives, and it counts up in a second units. It's reset
-        whenever new data arrives, so rapidly-arriving data never gives the
-        intercharacter timer a chance to count very high. It's only after the
-        last character of a burst - when the line is quiet - that the timer
-        really gets counting. When it reaches vtime, the user's request has
-        been satisfied and the read() returns. This provides exactly the
-        behavior we want when dealing with bursty data: collect data while
-        it's arriving rapidly, but when it calms down, give us what you got.
+    """Get or set the VTIME termios setting for timeout in seconds of a
+    blocking read. Can be between 0 to 25.5 seconds, with a resolution of 0.1
+    seconds.
+
+    When configured in conjunction with VMIN, VTIME acts as an interbyte
+    timeout that restarts on every byte received, and a blocking read will
+    block until at least VMIN bytes are read or the VTIME timeout expires after
+    the last byte read. See the `termios` man page for more information.
 
     Raises:
         SerialError: if an I/O or OS error occurs.
-        ValueError: if `vtime` not in range of 0 .. 25.5 seconds
-        TypeError: if given type of `vtime` is not `int` or `float`
+        TypeError: if `vtime` type is not float or int.
+        ValueError: if `vtime` value is invalid.
 
     :type: float
     """
