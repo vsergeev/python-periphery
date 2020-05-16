@@ -57,6 +57,7 @@ class Serial(object):
         """
         self._fd = None
         self._devpath = None
+        self._use_termios_timeout = False
         self._open(devpath, baudrate, databits, parity, stopbits, xonxoff, rtscts)
 
     def __del__(self):
@@ -167,6 +168,8 @@ class Serial(object):
         except termios.error as e:
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
+        self._use_termios_timeout = False
+
     # Methods
 
     def read(self, length, timeout=None):
@@ -180,6 +183,13 @@ class Serial(object):
 
         For a non-blocking or timeout-bound read, `read()` may return less than
         the requested number of bytes.
+
+        For a blocking read with the VMIN setting configured, `read()` will
+        block until at least VMIN bytes are read. For a blocking read with both
+        VMIN and VTIME settings configured, `read()` will block until at least
+        VMIN bytes are read or the VTIME interbyte timeout expires after the
+        last byte read. In either case, `read()` may return less than the
+        requested number of bytes.
 
         Args:
             length (int): length in bytes.
@@ -203,6 +213,9 @@ class Serial(object):
                 chunk = os.read(self._fd, length - len(data))
             except OSError as e:
                 raise SerialError(e.errno, "Reading serial port: " + e.strerror)
+
+            if self._use_termios_timeout:
+                return chunk
 
             if not chunk:
                 raise SerialError(0, "Reading serial port: unexpected empty read")
@@ -656,6 +669,8 @@ class Serial(object):
             termios.tcsetattr(self._fd, termios.TCSANOW, [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
         except termios.error as e:
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
+
+        self._use_termios_timeout = vmin > 0
 
     vmin = property(_get_vmin, _set_vmin)
     """Get or set the VMIN termios setting for minimum number of bytes returned
