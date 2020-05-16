@@ -173,13 +173,13 @@ class Serial(object):
         """Read up to `length` number of bytes from the serial port with an
         optional timeout.
 
-        `timeout` can be positive for a timeout in seconds, 0 for a
-        non-blocking read, or negative or None for a blocking read that will
-        block until `length` number of bytes are read. Default is a blocking
-        read.
+        `timeout` can be positive for a blocking read with a timeout in
+        seconds, zero for a non-blocking read, or negative or None for a
+        blocking read that will block until `length` number of bytes are read.
+        Default is a blocking read.
 
-        For a non-blocking or timeout-bound read, read() may return data whose
-        length is less than or equal to the requested length.
+        For a non-blocking or timeout-bound read, `read()` may return less than
+        the requested number of bytes.
 
         Args:
             length (int): length in bytes.
