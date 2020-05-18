@@ -237,9 +237,10 @@ class Serial(object):
             raise SerialError(e.errno, "Writing serial port: " + e.strerror)
 
     def poll(self, timeout=None):
-        """Poll for data available for reading from the serial port.
+        """Poll for data available for reading from the serial port with an
+        optional timeout.
 
-        `timeout` can be positive for a timeout in seconds, 0 for a
+        `timeout` can be positive for a timeout in seconds, zero for a
         non-blocking poll, or negative or None for a blocking poll. Default is
         a blocking poll.
 
