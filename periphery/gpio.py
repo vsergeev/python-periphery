@@ -68,15 +68,16 @@ class GPIO(object):
         raise NotImplementedError()
 
     def poll(self, timeout=None):
-        """Poll a GPIO for the edge event configured with the .edge property.
+        """Poll a GPIO for the edge event configured with the .edge property
+        with an optional timeout.
 
         For character device GPIOs, the edge event should be consumed with
         `read_event()`. For sysfs GPIOs, the edge event should be consumed with
         `read()`.
 
-        `timeout` can be a positive number for a timeout in seconds, 0 for a
-        non-blocking poll, or negative or None for a blocking poll. Defaults to
-        blocking poll.
+        `timeout` can be a positive number for a timeout in seconds, zero for a
+        non-blocking poll, or negative or None for a blocking poll. Default is
+        a blocking poll.
 
         Args:
             timeout (int, float, None): timeout duration in seconds.
