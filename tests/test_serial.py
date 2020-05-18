@@ -45,6 +45,8 @@ def test_open_close():
     assert serial.stopbits == 1
     assert serial.xonxoff == False
     assert serial.rtscts == False
+    assert serial.vmin == 0
+    assert serial.vtime == 0
 
     # Change some stuff and check that it changed
     serial.baudrate = 4800
@@ -60,6 +62,10 @@ def test_open_close():
     serial.xonxoff = True
     assert serial.xonxoff == True
     # Test serial port may not support rtscts
+    serial.vmin = 50
+    assert serial.vmin == 50
+    serial.vtime = 15.3
+    assert abs(serial.vtime - 15.3) < 0.1
 
     serial.close()
 
@@ -131,6 +137,25 @@ def test_loopback():
     toc = time.time()
     # Assuming we weren't context switched out for a second
     assert int(toc - tic) == 0
+
+    # Test blocking read with vmin=5 termios timeout
+    print("Check blocking read with vmin termios timeout")
+    serial.vmin = 5
+    assert serial.write(lorem_ipsum[0:5]) == 5
+    serial.flush()
+    buf = serial.read(len(lorem_ipsum))
+    assert buf == lorem_ipsum[0:5]
+
+    # Test blocking read with vmin=5, vtime=2 termios timeout
+    print("Check blocking read with vmin + vtime termios timeout")
+    serial.vtime = 2
+    assert serial.write(lorem_ipsum[0:3]) == 3
+    serial.flush()
+    tic = time.time()
+    buf = serial.read(len(lorem_ipsum))
+    toc = time.time()
+    assert buf == lorem_ipsum[0:3]
+    assert (toc - tic) > 1
 
     serial.close()
 
