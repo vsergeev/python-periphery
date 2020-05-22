@@ -25,11 +25,11 @@ class EdgeEvent(collections.namedtuple('EdgeEvent', ['edge', 'timestamp'])):
 
 
 class GPIO(object):
-    def __new__(cls, *args):
+    def __new__(cls, *args, **kwargs):
         if len(args) > 2:
-            return CdevGPIO.__new__(cls, *args)
+            return CdevGPIO.__new__(cls, *args, **kwargs)
         else:
-            return SysfsGPIO.__new__(cls, *args)
+            return SysfsGPIO.__new__(cls, *args, **kwargs)
 
     def __del__(self):
         self.close()
