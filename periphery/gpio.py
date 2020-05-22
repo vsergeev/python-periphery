@@ -243,7 +243,7 @@ class GPIO(object):
 
     @property
     def chip_label(self):
-        """ Get the label of the GPIO chip associated with the GPIO.
+        """Get the label of the GPIO chip associated with the GPIO.
 
         :type: str
         """
