@@ -221,6 +221,17 @@ class GPIO(object):
         raise NotImplementedError()
 
     @property
+    def label(self):
+        """Get the line consumer label of the GPIO.
+
+        This method is intended for use with character device GPIOs and always
+        returns the empty string for sysfs GPIOs.
+
+        :type: str
+        """
+        raise NotImplementedError()
+
+    @property
     def chip_fd(self):
         """Get the GPIO chip file descriptor of the GPIO object.
 
@@ -622,6 +633,18 @@ class CdevGPIO(GPIO):
         return line_info.name.decode()
 
     @property
+    def label(self):
+        line_info = _CGpiolineInfo()
+        line_info.line_offset = self._line
+
+        try:
+            fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEINFO_IOCTL, line_info)
+        except (OSError, IOError) as e:
+            raise GPIOError(e.errno, "Querying GPIO line info: " + e.strerror)
+
+        return line_info.consumer.decode()
+
+    @property
     def chip_fd(self):
         return self._chip_fd
 
@@ -693,6 +716,11 @@ class CdevGPIO(GPIO):
             str_name = "<error>"
 
         try:
+            str_label = self.label
+        except GPIOError:
+            str_label = "<error>"
+
+        try:
             str_direction = self.direction
         except GPIOError:
             str_direction = "<error>"
@@ -712,8 +740,8 @@ class CdevGPIO(GPIO):
         except GPIOError:
             str_chip_label = "<error>"
 
-        return "GPIO {:d} (name=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
-            .format(self._line, str_name, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_chip_name, str_chip_label)
+        return "GPIO {:d} (name=\"{:s}\", label=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
+            .format(self._line, str_name, str_label, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_chip_name, str_chip_label)
 
 
 class SysfsGPIO(GPIO):
@@ -918,6 +946,10 @@ class SysfsGPIO(GPIO):
 
     @property
     def name(self):
+        return ""
+
+    @property
+    def label(self):
         return ""
 
     @property

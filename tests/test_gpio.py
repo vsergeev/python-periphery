@@ -49,6 +49,9 @@ def test_open_close():
     assert gpio.fd >= 0
     assert gpio.chip_fd >= 0
 
+    # Check default label
+    assert gpio.label == "periphery"
+
     # Set invalid direction
     with AssertRaises(ValueError):
         gpio.direction = "blah"
