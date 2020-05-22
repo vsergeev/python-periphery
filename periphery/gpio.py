@@ -439,30 +439,37 @@ class CdevGPIO(GPIO):
     _GPIOEVENT_EVENT_RISING_EDGE = 0x1
     _GPIOEVENT_EVENT_FALLING_EDGE = 0x2
 
-    def __init__(self, path, line, direction):
+    def __init__(self, path, line, direction, edge="none", bias="default", drive="default", inverted=False, label=None):
         """**Character device GPIO**
 
         Instantiate a GPIO object and open the character device GPIO with the
         specified line and direction at the specified GPIO chip path (e.g.
-        "/dev/gpiochip0").
-
-        `direction` can be "in" for input; "out" for output, initialized to
-        low; "high" for output, initialized to high; or "low" for output,
-        initialized to low.
+        "/dev/gpiochip0"). Defaults properties can be overridden with keyword
+        arguments.
 
         Args:
             path (str): GPIO chip character device path.
             line (int, str): GPIO line number or name.
             direction (str): GPIO direction, can be "in", "out", "high", or
                              "low".
+            edge (str): GPIO interrupt edge, can be "none", "rising",
+                        "falling", or "both".
+            bias (str): GPIO line bias, can be "default", "pull_up",
+                        "pull_down", or "disable".
+            drive (str): GPIO line drive, can be "default", "open_drain", or
+                         "open_source".
+            inverted (bool): GPIO is inverted (active low).
+            label (str, None): GPIO line consumer label.
 
         Returns:
             CdevGPIO: GPIO object.
 
         Raises:
             GPIOError: if an I/O or OS error occurs.
-            TypeError: if `path`, `line`, or `direction`  types are invalid.
-            ValueError: if `direction` value is invalid.
+            TypeError: if `path`, `line`, `direction`, `edge`, `bias`, `drive`,
+                       `inverted`, or `label` types are invalid.
+            ValueError: if `direction`, `edge`, `bias`, or `drive` value is
+                        invalid.
             LookupError: if the GPIO line was not found by the provided name.
 
         """
@@ -477,20 +484,46 @@ class CdevGPIO(GPIO):
         self._inverted = None
         self._label = None
 
-        self._open(path, line, direction)
+        self._open(path, line, direction, edge, bias, drive, inverted, label)
 
-    def __new__(self, path, line, direction):
+    def __new__(self, path, line, direction, **kwargs):
         return object.__new__(CdevGPIO)
 
-    def _open(self, path, line, direction):
+    def _open(self, path, line, direction, edge, bias, drive, inverted, label):
         if not isinstance(path, str):
             raise TypeError("Invalid path type, should be string.")
+
         if not isinstance(line, (int, str)):
             raise TypeError("Invalid line type, should be integer or string.")
+
         if not isinstance(direction, str):
             raise TypeError("Invalid direction type, should be string.")
-        if direction.lower() not in ["in", "out", "high", "low"]:
+        elif direction.lower() not in ["in", "out", "high", "low"]:
             raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
+
+        if not isinstance(edge, str):
+            raise TypeError("Invalid edge type, should be string.")
+        elif edge.lower() not in ["none", "rising", "falling", "both"]:
+            raise ValueError("Invalid edge, can be: \"none\", \"rising\", \"falling\", \"both\".")
+
+        if not isinstance(bias, str):
+            raise TypeError("Invalid bias type, should be string.")
+        elif bias.lower() not in ["default", "pull_up", "pull_down", "disable"]:
+            raise ValueError("Invalid bias, can be: \"default\", \"pull_up\", \"pull_down\", \"disable\".")
+
+        if not isinstance(drive, str):
+            raise TypeError("Invalid drive type, should be string.")
+        elif drive.lower() not in ["default", "open_drain", "open_source"]:
+            raise ValueError("Invalid drive, can be: \"default\", \"open_drain\", \"open_source\".")
+
+        if not isinstance(inverted, bool):
+            raise TypeError("Invalid drive type, should be bool.")
+
+        if not isinstance(label, (type(None), str)):
+            raise TypeError("Invalid label type, should be None or str.")
+
+        if isinstance(line, str):
+            line = self._find_line_by_name(path, line)
 
         # Open GPIO chip
         try:
@@ -499,14 +532,10 @@ class CdevGPIO(GPIO):
             raise GPIOError(e.errno, "Opening GPIO chip: " + e.strerror)
 
         self._devpath = path
-        self._label = b"periphery"
+        self._line = line
+        self._label = label.encode() if label is not None else b"periphery"
 
-        if isinstance(line, int):
-            self._line = line
-            self._reopen(direction, "none", "default", "default", False)
-        else:
-            self._line = self._find_line_by_name(line)
-            self._reopen(direction, "none", "default", "default", False)
+        self._reopen(direction, edge, bias, drive, inverted)
 
     def _reopen(self, direction, edge, bias, drive, inverted):
         flags = 0
@@ -592,25 +621,41 @@ class CdevGPIO(GPIO):
         self._drive = drive
         self._inverted = inverted
 
-    def _find_line_by_name(self, line):
+    def _find_line_by_name(self, path, line):
+        # Open GPIO chip
+        try:
+            fd = os.open(path, 0)
+        except OSError as e:
+            raise GPIOError(e.errno, "Opening GPIO chip: " + e.strerror)
+
         # Get chip info for number of lines
         chip_info = _CGpiochipInfo()
         try:
-            fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_CHIPINFO_IOCTL, chip_info)
+            fcntl.ioctl(fd, CdevGPIO._GPIO_GET_CHIPINFO_IOCTL, chip_info)
         except (OSError, IOError) as e:
             raise GPIOError(e.errno, "Querying GPIO chip info: " + e.strerror)
 
         # Get each line info
         line_info = _CGpiolineInfo()
+        found = False
         for i in range(chip_info.lines):
             line_info.line_offset = i
             try:
-                fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEINFO_IOCTL, line_info)
+                fcntl.ioctl(fd, CdevGPIO._GPIO_GET_LINEINFO_IOCTL, line_info)
             except (OSError, IOError) as e:
                 raise GPIOError(e.errno, "Querying GPIO line info: " + e.strerror)
 
             if line_info.name.decode() == line:
-                return i
+                found = True
+                break
+
+        try:
+            os.close(fd)
+        except OSError as e:
+            raise GPIOError(e.errno, "Closing GPIO chip: " + e.strerror)
+
+        if found:
+            return i
 
         raise LookupError("Opening GPIO line: GPIO line \"{:s}\" not found by name.".format(line))
 

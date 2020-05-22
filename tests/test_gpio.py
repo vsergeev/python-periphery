@@ -141,6 +141,20 @@ def test_open_close():
 
     gpio.close()
 
+    # Open with keyword arguments
+    gpio = periphery.GPIO(path, line_input, "in", edge="rising", bias="default", drive="default", inverted=False, label="test123")
+    assert gpio.line == line_input
+    assert gpio.direction == "in"
+    assert gpio.fd >= 0
+    assert gpio.chip_fd >= 0
+    assert gpio.edge == "rising"
+    assert gpio.bias == "default"
+    assert gpio.drive == "default"
+    assert gpio.inverted == False
+    assert gpio.label == "test123"
+
+    gpio.close()
+
     print("Open/close test passed.")
 
 
