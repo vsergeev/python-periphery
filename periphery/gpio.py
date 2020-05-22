@@ -300,6 +300,62 @@ class GPIO(object):
     :type: str
     """
 
+    def _get_bias(self):
+        raise NotImplementedError()
+
+    def _set_bias(self, bias):
+        raise NotImplementedError()
+
+    bias = property(_get_bias, _set_bias)
+    """Get or set the GPIO's line bias. Can be "default", "pull_up",
+    "pull_down", "disable".
+
+    This property is not supported by sysfs GPIOs.
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `bias` type is not str.
+        ValueError: if `bias` value is invalid.
+
+    :type: str
+    """
+
+    def _get_drive(self):
+        raise NotImplementedError()
+
+    def _set_drive(self, drive):
+        raise NotImplementedError()
+
+    drive = property(_get_drive, _set_drive)
+    """Get or set the GPIO's line drive. Can be "default" (for push-pull),
+    "open_drain", "open_source".
+
+    This property is not supported by sysfs GPIOs.
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `drive` type is not str.
+        ValueError: if `drive` value is invalid.
+
+    :type: str
+    """
+
+    def _get_inverted(self):
+        raise NotImplementedError()
+
+    def _set_inverted(self, inverted):
+        raise NotImplementedError()
+
+    inverted = property(_get_inverted, _set_inverted)
+    """Get or set the GPIO's inverted (active low) property.
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `inverted` type is not bool.
+
+    :type: bool
+    """
+
     # String representation
 
     def __str__(self):
@@ -371,6 +427,12 @@ class CdevGPIO(GPIO):
     _GPIO_GET_LINEEVENT_IOCTL = 0xc030b404
     _GPIOHANDLE_REQUEST_INPUT = 0x1
     _GPIOHANDLE_REQUEST_OUTPUT = 0x2
+    _GPIOHANDLE_REQUEST_ACTIVE_LOW = 0x4
+    _GPIOHANDLE_REQUEST_OPEN_DRAIN = 0x8
+    _GPIOHANDLE_REQUEST_OPEN_SOURCE = 0x10
+    _GPIOHANDLE_REQUEST_BIAS_PULL_UP = 0x20
+    _GPIOHANDLE_REQUEST_BIAS_PULL_DOWN = 0x40
+    _GPIOHANDLE_REQUEST_BIAS_DISABLE = 0x80
     _GPIOEVENT_REQUEST_RISING_EDGE = 0x1
     _GPIOEVENT_REQUEST_FALLING_EDGE = 0x2
     _GPIOEVENT_REQUEST_BOTH_EDGES = 0x3
@@ -405,11 +467,15 @@ class CdevGPIO(GPIO):
 
         """
         self._devpath = None
+        self._line = None
         self._line_fd = None
         self._chip_fd = None
-        self._edge = "none"
-        self._direction = "in"
-        self._line = None
+        self._direction = None
+        self._edge = None
+        self._bias = None
+        self._drive = None
+        self._inverted = None
+        self._label = None
 
         self._open(path, line, direction)
 
@@ -433,15 +499,37 @@ class CdevGPIO(GPIO):
             raise GPIOError(e.errno, "Opening GPIO chip: " + e.strerror)
 
         self._devpath = path
+        self._label = b"periphery"
 
         if isinstance(line, int):
             self._line = line
-            self._reopen(direction, "none")
+            self._reopen(direction, "none", "default", "default", False)
         else:
             self._line = self._find_line_by_name(line)
-            self._reopen(direction, "none")
+            self._reopen(direction, "none", "default", "default", False)
 
-    def _reopen(self, direction, edge):
+    def _reopen(self, direction, edge, bias, drive, inverted):
+        flags = 0
+
+        if bias == "pull_up":
+            flags |= CdevGPIO._GPIOHANDLE_REQUEST_BIAS_PULL_UP
+        elif bias == "pull_down":
+            flags |= CdevGPIO._GPIOHANDLE_REQUEST_BIAS_PULL_DOWN
+        elif bias == "disable":
+            flags |= CdevGPIO._GPIOHANDLE_REQUEST_BIAS_DISABLE
+
+        if drive == "open_drain":
+            flags |= CdevGPIO._GPIOHANDLE_REQUEST_OPEN_DRAIN
+        elif drive == "open_source":
+            flags |= CdevGPIO._GPIOHANDLE_REQUEST_OPEN_SOURCE
+
+        if inverted:
+            flags |= CdevGPIO._GPIOHANDLE_REQUEST_ACTIVE_LOW
+
+        # FIXME this should really use GPIOHANDLE_SET_CONFIG_IOCTL instead of
+        # closing and reopening, especially to preserve output value on
+        # configuration changes
+
         # Close existing line
         if self._line_fd is not None:
             try:
@@ -449,13 +537,15 @@ class CdevGPIO(GPIO):
             except OSError as e:
                 raise GPIOError(e.errno, "Closing existing GPIO line: " + e.strerror)
 
+            self._line_fd = None
+
         if direction == "in":
             if edge == "none":
                 request = _CGpiohandleRequest()
 
                 request.lineoffsets[0] = self._line
-                request.flags = CdevGPIO._GPIOHANDLE_REQUEST_INPUT
-                request.consumer_label = b"periphery"
+                request.flags = flags | CdevGPIO._GPIOHANDLE_REQUEST_INPUT
+                request.consumer_label = self._label
                 request.lines = 1
 
                 try:
@@ -464,15 +554,13 @@ class CdevGPIO(GPIO):
                     raise GPIOError(e.errno, "Opening input line handle: " + e.strerror)
 
                 self._line_fd = request.fd
-                self._direction = "in"
-                self._edge = "none"
             else:
                 request = _CGpioeventRequest()
 
                 request.lineoffset = self._line
-                request.handleflags = CdevGPIO._GPIOHANDLE_REQUEST_INPUT
+                request.handleflags = flags | CdevGPIO._GPIOHANDLE_REQUEST_INPUT
                 request.eventflags = CdevGPIO._GPIOEVENT_REQUEST_RISING_EDGE if edge == "rising" else CdevGPIO._GPIOEVENT_REQUEST_FALLING_EDGE if edge == "falling" else CdevGPIO._GPIOEVENT_REQUEST_BOTH_EDGES
-                request.consumer_label = b"periphery"
+                request.consumer_label = self._label
 
                 try:
                     fcntl.ioctl(self._chip_fd, CdevGPIO._GPIO_GET_LINEEVENT_IOCTL, request)
@@ -480,16 +568,15 @@ class CdevGPIO(GPIO):
                     raise GPIOError(e.errno, "Opening input line event handle: " + e.strerror)
 
                 self._line_fd = request.fd
-                self._direction = "in"
-                self._edge = edge
         else:
             request = _CGpiohandleRequest()
             initial_value = True if direction == "high" else False
+            initial_value ^= inverted
 
             request.lineoffsets[0] = self._line
-            request.flags = CdevGPIO._GPIOHANDLE_REQUEST_OUTPUT
+            request.flags = flags | CdevGPIO._GPIOHANDLE_REQUEST_OUTPUT
             request.default_values[0] = initial_value
-            request.consumer_label = b"periphery"
+            request.consumer_label = self._label
             request.lines = 1
 
             try:
@@ -498,8 +585,12 @@ class CdevGPIO(GPIO):
                 raise GPIOError(e.errno, "Opening output line handle: " + e.strerror)
 
             self._line_fd = request.fd
-            self._direction = "out"
-            self._edge = "none"
+
+        self._direction = "in" if direction == "in" else "out"
+        self._edge = edge
+        self._bias = bias
+        self._drive = drive
+        self._inverted = inverted
 
     def _find_line_by_name(self, line):
         # Get chip info for number of lines
@@ -684,7 +775,7 @@ class CdevGPIO(GPIO):
         if self._direction == direction:
             return
 
-        self._reopen(direction, "none")
+        self._reopen(direction, "none", self._bias, self._drive, self._inverted)
 
     direction = property(_get_direction, _set_direction)
 
@@ -703,9 +794,58 @@ class CdevGPIO(GPIO):
         if self._edge == edge:
             return
 
-        self._reopen("in", edge)
+        self._reopen(self._direction, edge, self._bias, self._drive, self._inverted)
 
     edge = property(_get_edge, _set_edge)
+
+    def _get_bias(self):
+        return self._bias
+
+    def _set_bias(self, bias):
+        if not isinstance(bias, str):
+            raise TypeError("Invalid bias type, should be string.")
+        if bias.lower() not in ["default", "pull_up", "pull_down", "disable"]:
+            raise ValueError("Invalid bias, can be: \"default\", \"pull_up\", \"pull_down\", \"disable\".")
+
+        if self._bias == bias:
+            return
+
+        self._reopen(self._direction, self._edge, bias, self._drive, self._inverted)
+
+    bias = property(_get_bias, _set_bias)
+
+    def _get_drive(self):
+        return self._drive
+
+    def _set_drive(self, drive):
+        if not isinstance(drive, str):
+            raise TypeError("Invalid drive type, should be string.")
+        if drive.lower() not in ["default", "open_drain", "open_source"]:
+            raise ValueError("Invalid drive, can be: \"default\", \"open_drain\", \"open_source\".")
+
+        if self._direction != "out" and drive != "default":
+            raise GPIOError(None, "Invalid operation: cannot set line drive on input GPIO")
+
+        if self._drive == drive:
+            return
+
+        self._reopen(self._direction, self._edge, self._bias, drive, self._inverted)
+
+    drive = property(_get_drive, _set_drive)
+
+    def _get_inverted(self):
+        return self._inverted
+
+    def _set_inverted(self, inverted):
+        if not isinstance(inverted, bool):
+            raise TypeError("Invalid drive type, should be bool.")
+
+        if self._inverted == inverted:
+            return
+
+        self._reopen(self._direction, self._edge, self._bias, self._drive, inverted)
+
+    inverted = property(_get_inverted, _set_inverted)
 
     # String representation
 
@@ -731,6 +871,21 @@ class CdevGPIO(GPIO):
             str_edge = "<error>"
 
         try:
+            str_bias = self.bias
+        except GPIOError:
+            str_bias = "<error>"
+
+        try:
+            str_drive = self.drive
+        except GPIOError:
+            str_drive = "<error>"
+
+        try:
+            str_inverted = str(self.inverted)
+        except GPIOError:
+            str_inverted = "<error>"
+
+        try:
             str_chip_name = self.chip_name
         except GPIOError:
             str_chip_name = "<error>"
@@ -740,8 +895,8 @@ class CdevGPIO(GPIO):
         except GPIOError:
             str_chip_label = "<error>"
 
-        return "GPIO {:d} (name=\"{:s}\", label=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
-            .format(self._line, str_name, str_label, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_chip_name, str_chip_label)
+        return "GPIO {:d} (name=\"{:s}\", label=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, bias={:s}, drive={:s}, inverted={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
+            .format(self._line, str_name, str_label, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_bias, str_drive, str_inverted, str_chip_name, str_chip_label)
 
 
 class SysfsGPIO(GPIO):
@@ -1034,6 +1189,50 @@ class SysfsGPIO(GPIO):
 
     edge = property(_get_edge, _set_edge)
 
+    def _get_bias(self):
+        raise NotImplementedError("Sysfs GPIO does not support line bias property.")
+
+    def _set_bias(self, bias):
+        raise NotImplementedError("Sysfs GPIO does not support line bias property.")
+
+    bias = property(_get_bias, _set_bias)
+
+    def _get_drive(self):
+        raise NotImplementedError("Sysfs GPIO does not support line drive property.")
+
+    def _set_drive(self, drive):
+        raise NotImplementedError("Sysfs GPIO does not support line drive property.")
+
+    drive = property(_get_drive, _set_drive)
+
+    def _get_inverted(self):
+        # Read active_low
+        try:
+            with open(os.path.join(self._path, "active_low"), "r") as f_inverted:
+                inverted = f_inverted.read().strip()
+        except IOError as e:
+            raise GPIOError(e.errno, "Getting GPIO active_low: " + e.strerror)
+
+        if inverted == "0":
+            return False
+        elif inverted == "1":
+            return True
+
+        raise GPIOError(None, "Unknown GPIO active_low value: {}".format(inverted))
+
+    def _set_inverted(self, inverted):
+        if not isinstance(inverted, bool):
+            raise TypeError("Invalid drive type, should be bool.")
+
+        # Write active_low
+        try:
+            with open(os.path.join(self._path, "active_low"), "w") as f_active_low:
+                f_active_low.write("1\n" if inverted else "0\n")
+        except IOError as e:
+            raise GPIOError(e.errno, "Setting GPIO active_low: " + e.strerror)
+
+    inverted = property(_get_inverted, _set_inverted)
+
     # String representation
 
     def __str__(self):
@@ -1057,5 +1256,10 @@ class SysfsGPIO(GPIO):
         except GPIOError:
             str_chip_label = "<error>"
 
-        return "GPIO {:d} (device={:s}, fd={:d}, direction={:s}, edge={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=sysfs)" \
-            .format(self._line, self._path, self._fd, str_direction, str_edge, str_chip_name, str_chip_label)
+        try:
+            str_inverted = str(self.inverted)
+        except GPIOError:
+            str_inverted = "<error>"
+
+        return "GPIO {:d} (device={:s}, fd={:d}, direction={:s}, edge={:s}, inverted={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=sysfs)" \
+            .format(self._line, self._path, self._fd, str_direction, str_edge, str_inverted, str_chip_name, str_chip_label)

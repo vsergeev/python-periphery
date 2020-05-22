@@ -50,6 +50,16 @@ def test_open_close():
     # Set invalid edge
     with AssertRaises(ValueError):
         gpio.edge = "blah"
+    # Unsupported property bias
+    with AssertRaises(NotImplementedError):
+        _ = gpio.bias
+    with AssertRaises(NotImplementedError):
+        gpio.bias = "pull_up"
+    # Unsupported property drive
+    with AssertRaises(NotImplementedError):
+        _ = gpio.drive
+    with AssertRaises(NotImplementedError):
+        gpio.drive = "open_drain"
     # Unsupported proprety
     with AssertRaises(NotImplementedError):
         _ = gpio.chip_fd
@@ -69,6 +79,13 @@ def test_open_close():
     gpio.direction = "high"
     assert gpio.direction == "out"
     assert gpio.read() == True
+
+    # Set inverted true, check inverted
+    gpio.inverted = True
+    assert gpio.inverted == True
+    # Set inverted false, check inverted
+    gpio.inverted = False
+    assert gpio.inverted == False
 
     # Set direction in, check direction in
     gpio.direction = "in"

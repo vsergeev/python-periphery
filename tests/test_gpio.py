@@ -58,6 +58,12 @@ def test_open_close():
     # Set invalid edge
     with AssertRaises(ValueError):
         gpio.edge = "blah"
+    # Set invalid bias
+    with AssertRaises(ValueError):
+        gpio.bias = "blah"
+    # Set invalid drive
+    with AssertRaises(ValueError):
+        gpio.drive = "blah"
 
     # Set direction out, check direction out, check value low
     gpio.direction = "out"
@@ -71,6 +77,24 @@ def test_open_close():
     gpio.direction = "high"
     assert gpio.direction == "out"
     assert gpio.read() == True
+
+    # Set drive open drain, check drive open drain
+    gpio.drive = "open_drain"
+    assert gpio.drive == "open_drain"
+    # Set drive open source, check drive open source
+    gpio.drive = "open_source"
+    assert gpio.drive == "open_source"
+    # Set drive default, check drive default
+    gpio.drive = "default"
+    assert gpio.drive == "default"
+
+    # Set inverted true, check inverted true
+    gpio.inverted = True
+    assert gpio.inverted == True
+    # Set inverted false, check inverted false
+    gpio.inverted = False
+    assert gpio.inverted == False
+
     # Attempt to set interrupt edge on output GPIO
     with AssertRaises(periphery.GPIOError):
         gpio.edge = "rising"
@@ -97,6 +121,23 @@ def test_open_close():
     # Set edge none, check edge none
     gpio.edge = "none"
     assert gpio.edge == "none"
+
+    # Set bias pull up, check bias pull up
+    gpio.bias = "pull_up"
+    assert gpio.bias == "pull_up"
+    # Set bias pull down, check bias pull down
+    gpio.bias = "pull_down"
+    assert gpio.bias == "pull_down"
+    # Set bias disable, check bias disable
+    gpio.bias = "disable"
+    assert gpio.bias == "disable"
+    # Set bias default, check bias default
+    gpio.bias = "default"
+    assert gpio.bias == "default"
+
+    # Attempt to set drive on input GPIO
+    with AssertRaises(periphery.GPIOError):
+        gpio.drive = "open_drain"
 
     gpio.close()
 
@@ -208,6 +249,25 @@ def test_loopback():
     print("Check poll timeout with poll_multiple()")
     gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
     assert gpios_ready == []
+
+    gpio_in.close()
+    gpio_out.close()
+
+    # Open both GPIOs as inputs
+    gpio_in = periphery.GPIO(path, line_input, "in")
+    gpio_out = periphery.GPIO(path, line_output, "in")
+
+    # Set bias pull-up, check value is high
+    print("Check input GPIO reads high with pull-up bias")
+    gpio_in.bias = "pull_up"
+    time.sleep(0.1)
+    assert gpio_in.read() == True
+
+    # Set bias pull-down, check value is low
+    print("Check input GPIO reads low with pull-down bias")
+    gpio_in.bias = "pull_down"
+    time.sleep(0.1)
+    assert gpio_in.read() == False
 
     gpio_in.close()
     gpio_out.close()
