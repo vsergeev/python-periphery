@@ -213,7 +213,7 @@ class GPIO(object):
     def name(self):
         """Get the line name of the GPIO.
 
-        his method is intended for use with character device GPIOs and always
+        This method is intended for use with character device GPIOs and always
         returns the empty string for sysfs GPIOs.
 
         :type: str
