@@ -797,13 +797,6 @@ class SysfsGPIO(GPIO):
                         raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
                 time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
-        else:
-            # Write direction
-            try:
-                with open(os.path.join(gpio_path, "direction"), "w") as f_direction:
-                    f_direction.write(direction.lower() + "\n")
-            except IOError as e:
-                raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
 
         # Open value
         try:
@@ -813,6 +806,10 @@ class SysfsGPIO(GPIO):
 
         self._line = line
         self._path = gpio_path
+
+        # Initialize direction
+        if not self._exported:
+            self.direction = direction
 
     # Methods
 
