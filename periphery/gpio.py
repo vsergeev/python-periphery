@@ -994,6 +994,9 @@ class SysfsGPIO(GPIO):
         if not self._exported:
             self.direction = direction
 
+        # Initialize inverted
+        self.inverted = False
+
     # Methods
 
     def read(self):
