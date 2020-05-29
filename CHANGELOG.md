@@ -1,3 +1,24 @@
+* v2.1.0 - 05/29/2020
+    * GPIO
+        * Add `poll_multiple()` static method.
+        * Add line consumer `label` property.
+        * Add line `bias`, line `drive`, and `inverted` properties.
+        * Add additional properties as keyword arguments to constructor for
+          character device GPIOs.
+        * Only unexport GPIO in `close()` if exported in open for sysfs GPIOs.
+        * Improve wording and fix typos in docstrings.
+    * Serial
+        * Fix performance of blocking read in `read()`.
+        * Raise exception on unexpected empty read in `read()`, which may be
+          caused by a serial port disconnect.
+        * Add `vmin` and `vtime` properties for the corresponding termios
+          settings.
+        * Add support for termios timeout with `read()`.
+        * Improve wording in docstrings.
+    * Contributors
+        * @xrombik - 444f778
+        * Alexander Steffen, @webmeister - f0403da
+
 * v2.0.1 - 01/08/2020
     * PWM
         * Add retry loop for opening PWM period file after export to
