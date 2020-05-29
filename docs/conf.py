@@ -21,7 +21,7 @@ copyright = u'2015-2020, vsergeev / Ivan (Vanya) A. Sergeev'
 author = u'Vanya A. Sergeev'
 
 # The short X.Y version.
-version = '2.0.1'
+version = '2.1.0'
 # The full version, including alpha/beta/rc tags.
 release = version
 
