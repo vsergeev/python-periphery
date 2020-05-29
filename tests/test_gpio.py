@@ -4,7 +4,7 @@ import threading
 import time
 
 import periphery
-from .asserts import AssertRaises
+from .test import ptest, pokay, passert, AssertRaises
 
 if sys.version_info[0] == 3:
     raw_input = input
@@ -19,147 +19,143 @@ line_output = None
 
 
 def test_arguments():
-    print("Starting arguments test...")
+    ptest()
 
     # Invalid open types
-    with AssertRaises(TypeError):
+    with AssertRaises("invalid open types", TypeError):
         periphery.GPIO(1, 1, "in")
-    with AssertRaises(TypeError):
+    with AssertRaises("invalid open types", TypeError):
         periphery.GPIO("abc", 2.3, "in")
-    with AssertRaises(TypeError):
+    with AssertRaises("invalid open types", TypeError):
         periphery.GPIO("abc", 1, 1)
     # Invalid direction
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid direction", ValueError):
         periphery.GPIO("abc", 1, "blah")
-
-    print("Arguments test passed.")
 
 
 def test_open_close():
-    print("Starting open/close test...")
+    ptest()
 
     # Open non-existent GPIO (export should fail with EINVAL)
-    with AssertRaises(periphery.GPIOError):
+    with AssertRaises("non-existent GPIO", periphery.GPIOError):
         periphery.GPIO(path, 9999, "in")
 
     # Open legitimate GPIO
     gpio = periphery.GPIO(path, line_output, "in")
-    assert gpio.line == line_output
-    assert gpio.direction == "in"
-    assert gpio.fd >= 0
-    assert gpio.chip_fd >= 0
+    passert("property line", gpio.line == line_output)
+    passert("direction is in", gpio.direction == "in")
+    passert("fd >= 0", gpio.fd >= 0)
+    passert("chip_fd >= 0", gpio.chip_fd >= 0)
 
     # Check default label
-    assert gpio.label == "periphery"
+    passert("property label", gpio.label == "periphery")
 
     # Set invalid direction
-    with AssertRaises(ValueError):
+    with AssertRaises("set invalid direction", ValueError):
         gpio.direction = "blah"
     # Set invalid edge
-    with AssertRaises(ValueError):
+    with AssertRaises("set invalid edge", ValueError):
         gpio.edge = "blah"
     # Set invalid bias
-    with AssertRaises(ValueError):
+    with AssertRaises("set invalid bias", ValueError):
         gpio.bias = "blah"
     # Set invalid drive
-    with AssertRaises(ValueError):
+    with AssertRaises("set invalid drive", ValueError):
         gpio.drive = "blah"
 
     # Set direction out, check direction out, check value low
     gpio.direction = "out"
-    assert gpio.direction == "out"
-    assert gpio.read() == False
+    passert("direction is out", gpio.direction == "out")
+    passert("value is low", gpio.read() == False)
     # Set direction low, check direction out, check value low
     gpio.direction = "low"
-    assert gpio.direction == "out"
-    assert gpio.read() == False
+    passert("direction is out", gpio.direction == "out")
+    passert("value is low", gpio.read() == False)
     # Set direction high, check direction out, check value high
     gpio.direction = "high"
-    assert gpio.direction == "out"
-    assert gpio.read() == True
+    passert("direction is out", gpio.direction == "out")
+    passert("value is high", gpio.read() == True)
 
     # Set drive open drain, check drive open drain
     gpio.drive = "open_drain"
-    assert gpio.drive == "open_drain"
+    passert("drive is open drain", gpio.drive == "open_drain")
     # Set drive open source, check drive open source
     gpio.drive = "open_source"
-    assert gpio.drive == "open_source"
+    passert("drive is open drain", gpio.drive == "open_source")
     # Set drive default, check drive default
     gpio.drive = "default"
-    assert gpio.drive == "default"
+    passert("drive is default", gpio.drive == "default")
 
     # Set inverted true, check inverted true
     gpio.inverted = True
-    assert gpio.inverted == True
+    passert("inverted is True", gpio.inverted == True)
     # Set inverted false, check inverted false
     gpio.inverted = False
-    assert gpio.inverted == False
+    passert("inverted is False", gpio.inverted == False)
 
     # Attempt to set interrupt edge on output GPIO
-    with AssertRaises(periphery.GPIOError):
+    with AssertRaises("set interrupt edge on output GPIO", periphery.GPIOError):
         gpio.edge = "rising"
     # Attempt to read event on output GPIO
-    with AssertRaises(periphery.GPIOError):
+    with AssertRaises("read event on output GPIO", periphery.GPIOError):
         gpio.read_event()
 
     # Set direction in, check direction in
     gpio.direction = "in"
-    assert gpio.direction == "in"
+    passert("direction is in", gpio.direction == "in")
 
     # Set edge none, check edge none
     gpio.edge = "none"
-    assert gpio.edge == "none"
+    passert("edge is none", gpio.edge == "none")
     # Set edge rising, check edge rising
     gpio.edge = "rising"
-    assert gpio.edge == "rising"
+    passert("edge is rising", gpio.edge == "rising")
     # Set edge falling, check edge falling
     gpio.edge = "falling"
-    assert gpio.edge == "falling"
+    passert("edge is falling", gpio.edge == "falling")
     # Set edge both, check edge both
     gpio.edge = "both"
-    assert gpio.edge == "both"
+    passert("edge is both", gpio.edge == "both")
     # Set edge none, check edge none
     gpio.edge = "none"
-    assert gpio.edge == "none"
+    passert("edge is none", gpio.edge == "none")
 
     # Set bias pull up, check bias pull up
     gpio.bias = "pull_up"
-    assert gpio.bias == "pull_up"
+    passert("bias is pull up", gpio.bias == "pull_up")
     # Set bias pull down, check bias pull down
     gpio.bias = "pull_down"
-    assert gpio.bias == "pull_down"
+    passert("bias is pull down", gpio.bias == "pull_down")
     # Set bias disable, check bias disable
     gpio.bias = "disable"
-    assert gpio.bias == "disable"
+    passert("bias is disable", gpio.bias == "disable")
     # Set bias default, check bias default
     gpio.bias = "default"
-    assert gpio.bias == "default"
+    passert("bias is default", gpio.bias == "default")
 
     # Attempt to set drive on input GPIO
-    with AssertRaises(periphery.GPIOError):
+    with AssertRaises("set drive on input GPIO", periphery.GPIOError):
         gpio.drive = "open_drain"
 
     gpio.close()
 
     # Open with keyword arguments
     gpio = periphery.GPIO(path, line_input, "in", edge="rising", bias="default", drive="default", inverted=False, label="test123")
-    assert gpio.line == line_input
-    assert gpio.direction == "in"
-    assert gpio.fd >= 0
-    assert gpio.chip_fd >= 0
-    assert gpio.edge == "rising"
-    assert gpio.bias == "default"
-    assert gpio.drive == "default"
-    assert gpio.inverted == False
-    assert gpio.label == "test123"
+    passert("property line", gpio.line == line_input)
+    passert("direction is in", gpio.direction == "in")
+    passert("fd >= 0", gpio.fd >= 0)
+    passert("chip_fd >= 0", gpio.chip_fd >= 0)
+    passert("edge is rising", gpio.edge == "rising")
+    passert("bias is default", gpio.bias == "default")
+    passert("drive is default", gpio.drive == "default")
+    passert("inverted is False", gpio.inverted == False)
+    passert("label is test123", gpio.label == "test123")
 
     gpio.close()
 
-    print("Open/close test passed.")
-
 
 def test_loopback():
-    print("Starting loopback test...")
+    ptest()
 
     # Open in and out lines
     gpio_in = periphery.GPIO(path, line_input, "in")
@@ -168,12 +164,12 @@ def test_loopback():
     # Drive out low, check in low
     print("Drive out low, check in low")
     gpio_out.write(False)
-    assert gpio_in.read() == False
+    passert("value is False", gpio_in.read() == False)
 
     # Drive out high, check in high
     print("Drive out high, check in high")
     gpio_out.write(True)
-    assert gpio_in.read() == True
+    passert("value is True", gpio_in.read() == True)
 
     # Wrapper for running poll() in a thread
     def threaded_poll(gpio, timeout):
@@ -192,11 +188,11 @@ def test_loopback():
     poll_ret = threaded_poll(gpio_in, 5)
     time.sleep(0.5)
     gpio_out.write(False)
-    assert poll_ret.get() == True
-    assert gpio_in.read() == False
+    passert("gpio_in polled True", poll_ret.get() == True)
+    passert("value is low", gpio_in.read() == False)
     event = gpio_in.read_event()
-    assert event.edge == "falling"
-    assert event.timestamp != 0
+    passert("event edge is falling", event.edge == "falling")
+    passert("event timestamp is non-zero", event.timestamp != 0)
 
     # Check poll rising 0 -> 1 interrupt
     print("Check poll rising 0 -> 1 interrupt")
@@ -204,11 +200,11 @@ def test_loopback():
     poll_ret = threaded_poll(gpio_in, 5)
     time.sleep(0.5)
     gpio_out.write(True)
-    assert poll_ret.get() == True
-    assert gpio_in.read() == True
+    passert("gpin_in polled True", poll_ret.get() == True)
+    passert("value is high", gpio_in.read() == True)
     event = gpio_in.read_event()
-    assert event.edge == "rising"
-    assert event.timestamp != 0
+    passert("event edge is rising", event.edge == "rising")
+    passert("event timestamp is non-zero", event.timestamp != 0)
 
     # Set edge to both
     gpio_in.edge = "both"
@@ -218,51 +214,51 @@ def test_loopback():
     poll_ret = threaded_poll(gpio_in, 5)
     time.sleep(0.5)
     gpio_out.write(False)
-    assert poll_ret.get() == True
-    assert gpio_in.read() == False
+    passert("gpio_in polled True", poll_ret.get() == True)
+    passert("value is low", gpio_in.read() == False)
     event = gpio_in.read_event()
-    assert event.edge == "falling"
-    assert event.timestamp != 0
+    passert("event edge is falling", event.edge == "falling")
+    passert("event timestamp is non-zero", event.timestamp != 0)
 
     # Check poll rising 0 -> 1 interrupt
     print("Check poll rising 0 -> 1 interrupt")
     poll_ret = threaded_poll(gpio_in, 5)
     time.sleep(0.5)
     gpio_out.write(True)
-    assert poll_ret.get() == True
-    assert gpio_in.read() == True
+    passert("gpio_in polled True", poll_ret.get() == True)
+    passert("value is high", gpio_in.read() == True)
     event = gpio_in.read_event()
-    assert event.edge == "rising"
-    assert event.timestamp != 0
+    passert("event edge is rising", event.edge == "rising")
+    passert("event timestamp is non-zero", event.timestamp != 0)
 
     # Check poll timeout
     print("Check poll timeout")
-    assert gpio_in.poll(1) == False
+    passert("gpio_in polled False", gpio_in.poll(1) == False)
 
     # Check poll falling 1 -> 0 interrupt with the poll_multiple() API
     print("Check poll falling 1 -> 0 interrupt with poll_multiple()")
     gpio_out.write(False)
     gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
-    assert gpios_ready == [gpio_in]
-    assert gpio_in.read() == False
+    passert("gpios ready is gpio_in", gpios_ready == [gpio_in])
+    passert("value is low", gpio_in.read() == False)
     event = gpio_in.read_event()
-    assert event.edge == "falling"
-    assert event.timestamp != 0
+    passert("event edge is falling", event.edge == "falling")
+    passert("event timestamp is non-zero", event.timestamp != 0)
 
     # Check poll rising 0 -> 1 interrupt with the poll_multiple() API
     print("Check poll rising 0 -> 1 interrupt with poll_multiple()")
     gpio_out.write(True)
     gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
-    assert gpios_ready == [gpio_in]
-    assert gpio_in.read() == True
+    passert("gpios ready is gpio_in", gpios_ready == [gpio_in])
+    passert("value is high", gpio_in.read() == True)
     event = gpio_in.read_event()
-    assert event.edge == "rising"
-    assert event.timestamp != 0
+    passert("event edge is rising", event.edge == "rising")
+    passert("event timestamp is non-zero", event.timestamp != 0)
 
     # Check poll timeout
     print("Check poll timeout with poll_multiple()")
     gpios_ready = periphery.GPIO.poll_multiple([gpio_in], 1)
-    assert gpios_ready == []
+    passert("gpios ready is empty", gpios_ready == [])
 
     gpio_in.close()
     gpio_out.close()
@@ -275,18 +271,16 @@ def test_loopback():
     print("Check input GPIO reads high with pull-up bias")
     gpio_in.bias = "pull_up"
     time.sleep(0.1)
-    assert gpio_in.read() == True
+    passert("value is high", gpio_in.read() == True)
 
     # Set bias pull-down, check value is low
     print("Check input GPIO reads low with pull-down bias")
     gpio_in.bias = "pull_down"
     time.sleep(0.1)
-    assert gpio_in.read() == False
+    passert("value is low", gpio_in.read() == False)
 
     gpio_in.close()
     gpio_out.close()
-
-    print("Loopback test passed.")
 
 
 def test_interactive():
@@ -299,23 +293,21 @@ def test_interactive():
 
     # Check tostring
     print("GPIO description: {}".format(str(gpio)))
-    assert raw_input("GPIO description looks ok? y/n ") == "y"
+    passert("interactive success", raw_input("GPIO description looks ok? y/n ") == "y")
 
     # Drive GPIO out low
     gpio.write(False)
-    assert raw_input("GPIO out is low? y/n ") == "y"
+    passert("interactive success", raw_input("GPIO out is low? y/n ") == "y")
 
     # Drive GPIO out high
     gpio.write(True)
-    assert raw_input("GPIO out is high? y/n ") == "y"
+    passert("interactive success", raw_input("GPIO out is high? y/n ") == "y")
 
     # Drive GPIO out low
     gpio.write(False)
-    assert raw_input("GPIO out is low? y/n ") == "y"
+    passert("interactive success", raw_input("GPIO out is low? y/n ") == "y")
 
     gpio.close()
-
-    print("Interactive test passed.")
 
 
 if __name__ == "__main__":
@@ -342,11 +334,13 @@ if __name__ == "__main__":
     line_input = int(sys.argv[2])
     line_output = int(sys.argv[3])
 
-    print("Starting GPIO tests...")
-
     test_arguments()
+    pokay("Arguments test passed.")
     test_open_close()
+    pokay("Open/close test passed.")
     test_loopback()
+    pokay("Loopback test passed.")
     test_interactive()
+    pokay("Interactive test passed.")
 
-    print("All GPIO tests passed.")
+    pokay("All tests passed!")

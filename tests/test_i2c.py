@@ -1,51 +1,46 @@
 import os
 import sys
+
 import periphery
-from .asserts import AssertRaises
+from .test import ptest, pokay, passert, AssertRaises
 
 if sys.version_info[0] == 3:
     raw_input = input
+
 
 i2c_devpath = None
 
 
 def test_arguments():
-    print("Starting arguments test...")
+    ptest()
 
     # Open with invalid type
-    with AssertRaises(TypeError):
+    with AssertRaises("open invalid type", TypeError):
         periphery.I2C(123)
-
-    print("Arguments test passed.")
 
 
 def test_open_close():
-    print("Starting open/close test...")
+    ptest()
 
     # Open non-existent device
-    with AssertRaises(periphery.I2CError):
+    with AssertRaises("non-existent device", periphery.I2CError):
         periphery.I2C("/foo/bar")
 
     # Open legitimate device
     i2c = periphery.I2C(i2c_devpath)
-    assert i2c.fd > 0
+    passert("fd >= 0", i2c.fd >= 0)
 
     # Close I2C
     i2c.close()
 
-    print("Open/close test passed.")
-
 
 def test_loopback():
-    print("Starting loopback test...")
-
-    print("No general way to do a loopback test for I2C without a real component, skipping...")
-
-    print("Loopback test passed.")
+    ptest()
+    # No general way to do a loopback test for I2C without a real component, skipping...
 
 
 def test_interactive():
-    print("Starting interactive test...")
+    ptest()
 
     # Open device 2
     i2c = periphery.I2C(i2c_devpath)
@@ -56,7 +51,7 @@ def test_interactive():
 
     # Check tostring
     print("I2C description: {}".format(str(i2c)))
-    assert raw_input("I2C description looks ok? y/n ") == "y"
+    passert("interactive success", raw_input("I2C description looks ok? y/n ") == "y")
 
     # There isn't much we can do without assuming a device on the other end,
     # because I2C needs an acknowledgement bit on each transferred byte.
@@ -69,15 +64,13 @@ def test_interactive():
     raw_input("Press enter to start transfer...")
 
     # Transfer to non-existent device
-    with AssertRaises(periphery.I2CError):
+    with AssertRaises("transfer to non-existent device", periphery.I2CError):
         i2c.transfer(0x7a, messages)
 
     i2c.close()
 
     success = raw_input("I2C transfer occurred? y/n ")
-    assert success == "y"
-
-    print("Interactive test passed.")
+    passert("interactive success", success == "y")
 
 
 if __name__ == "__main__":
@@ -104,11 +97,13 @@ if __name__ == "__main__":
 
     i2c_devpath = sys.argv[1]
 
-    print("Starting I2C tests...")
-
     test_arguments()
+    pokay("Arguments test passed.")
     test_open_close()
+    pokay("Open/close test passed.")
     test_loopback()
+    pokay("Loopback test passed.")
     test_interactive()
+    pokay("Interactive test passed.")
 
-    print("All I2C tests passed.")
+    pokay("All tests passed!")

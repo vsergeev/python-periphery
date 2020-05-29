@@ -1,79 +1,77 @@
 import os
 import sys
 import time
+
 import periphery
-from .asserts import AssertRaises
+from .test import ptest, pokay, passert, AssertRaises
 
 if sys.version_info[0] == 3:
     raw_input = input
+
 
 serial_device = None
 
 
 def test_arguments():
-    print("Starting arguments test...")
+    ptest()
 
     # Invalid data bits
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid databits", ValueError):
         periphery.Serial("/dev/ttyS0", 115200, databits=4)
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid databits", ValueError):
         periphery.Serial("/dev/ttyS0", 115200, databits=9)
     # Invalid parity
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid parity", ValueError):
         periphery.Serial("/dev/ttyS0", 115200, parity="blah")
     # Invalid stop bits
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid stop bits", ValueError):
         periphery.Serial("/dev/ttyS0", 115200, stopbits=0)
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid stop bits", ValueError):
         periphery.Serial("/dev/ttyS0", 115200, stopbits=3)
 
     # Everything else is fair game, although termios might not like it.
 
-    print("Arguments test passed.")
-
 
 def test_open_close():
-    print("Starting open/close test...")
+    ptest()
 
     serial = periphery.Serial(serial_device, 115200)
 
     # Confirm default settings
-    assert serial.fd > 0
-    assert serial.baudrate == 115200
-    assert serial.databits == 8
-    assert serial.parity == "none"
-    assert serial.stopbits == 1
-    assert serial.xonxoff == False
-    assert serial.rtscts == False
-    assert serial.vmin == 0
-    assert serial.vtime == 0
+    passert("fd > 0", serial.fd > 0)
+    passert("baudrate is 115200", serial.baudrate == 115200)
+    passert("databits is 8", serial.databits == 8)
+    passert("parity is none", serial.parity == "none")
+    passert("stopbits is 1", serial.stopbits == 1)
+    passert("xonxoff is False", serial.xonxoff == False)
+    passert("rtscts is False", serial.rtscts == False)
+    passert("vmin is 0", serial.vmin == 0)
+    passert("vtime is 0", serial.vtime == 0)
 
     # Change some stuff and check that it changed
     serial.baudrate = 4800
-    assert serial.baudrate == 4800
+    passert("baudrate is 4800", serial.baudrate == 4800)
     serial.baudrate = 9600
-    assert serial.baudrate == 9600
+    passert("baudrate is 9600", serial.baudrate == 9600)
     serial.databits = 7
-    assert serial.databits == 7
+    passert("databits is 7", serial.databits == 7)
     serial.parity = "odd"
-    assert serial.parity == "odd"
+    passert("parity is odd", serial.parity == "odd")
     serial.stopbits = 2
-    assert serial.stopbits == 2
+    passert("stopbits is 2", serial.stopbits == 2)
     serial.xonxoff = True
-    assert serial.xonxoff == True
+    passert("xonxoff is True", serial.xonxoff == True)
     # Test serial port may not support rtscts
     serial.vmin = 50
-    assert serial.vmin == 50
+    passert("vmin is 50", serial.vmin == 50)
     serial.vtime = 15.3
-    assert abs(serial.vtime - 15.3) < 0.1
+    passert("vtime is 15.3", abs(serial.vtime - 15.3) < 0.1)
 
     serial.close()
 
-    print("Open/close test passed.")
-
 
 def test_loopback():
-    print("Starting loopback test...")
+    ptest()
 
     lorem_ipsum = b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
@@ -81,89 +79,87 @@ def test_loopback():
 
     # Test write/flush/read with bytes write
     print("Write, flush, read lorem ipsum with bytes type")
-    assert serial.write(lorem_ipsum) == len(lorem_ipsum)
+    passert("wrote lorem ipsum bytes", serial.write(lorem_ipsum) == len(lorem_ipsum))
     serial.flush()
     buf = serial.read(len(lorem_ipsum), timeout=3)
-    assert buf == lorem_ipsum
+    passert("compare readback lorem ipsum", buf == lorem_ipsum)
 
     # Test write/flush/read with bytearray write
     print("Write, flush, read lorem ipsum with bytearray type")
-    assert serial.write(bytearray(lorem_ipsum)) == len(lorem_ipsum)
+    passert("wrote lorem ipsum bytearray", serial.write(bytearray(lorem_ipsum)) == len(lorem_ipsum))
     serial.flush()
     buf = serial.read(len(lorem_ipsum), timeout=3)
-    assert buf == lorem_ipsum
+    passert("compare readback lorem ipsum", buf == lorem_ipsum)
 
     # Test write/flush/read with list write
     print("Write, flush, read lorem ipsum with list type")
-    assert serial.write(list(bytearray(lorem_ipsum))) == len(lorem_ipsum)
+    passert("write lorem ipsum list", serial.write(list(bytearray(lorem_ipsum))) == len(lorem_ipsum))
     serial.flush()
     buf = serial.read(len(lorem_ipsum), timeout=3)
-    assert buf == lorem_ipsum
+    passert("compare readback lorem ipsum", buf == lorem_ipsum)
 
     # Test poll/write/flush/poll/input waiting/read
     print("Write, flush, poll, input waiting, read lorem ipsum")
-    assert serial.poll(0.5) == False
-    assert serial.write(lorem_ipsum) == len(lorem_ipsum)
+    passert("poll timed out", serial.poll(0.5) == False)
+    passert("write lorem ipsum", serial.write(lorem_ipsum) == len(lorem_ipsum))
     serial.flush()
-    assert serial.poll(0.5) == True
+    passert("poll succeeded", serial.poll(0.5) == True)
     periphery.sleep_ms(500)
-    assert serial.input_waiting() == len(lorem_ipsum)
+    passert("input waiting is lorem ipsum size", serial.input_waiting() == len(lorem_ipsum))
     buf = serial.read(len(lorem_ipsum))
-    assert buf == lorem_ipsum
+    passert("compare readback lorem ipsum", buf == lorem_ipsum)
 
     # Test non-blocking poll
     print("Check non-blocking poll")
-    assert serial.poll(0) == False
+    passert("non-blocking poll is False", serial.poll(0) == False)
 
     # Test a very large read-write (likely to exceed internal buffer size (~4096))
     print("Write, flush, read large buffer")
     lorem_hugesum = b"\xaa" * (4096 * 3)
-    assert serial.write(lorem_hugesum) == len(lorem_hugesum)
+    passert("wrote lorem hugesum", serial.write(lorem_hugesum) == len(lorem_hugesum))
     serial.flush()
     buf = serial.read(len(lorem_hugesum), timeout=3)
-    assert buf == lorem_hugesum
+    passert("compare readback lorem hugesum", buf == lorem_hugesum)
 
     # Test read timeout
     print("Check read timeout")
     tic = time.time()
-    assert serial.read(4096 * 3, timeout=2) == b""
+    passert("read timed out", serial.read(4096 * 3, timeout=2) == b"")
     toc = time.time()
-    assert (toc - tic) > 1
+    passert("time elapsed", (toc - tic) > 1)
 
     # Test non-blocking read
     print("Check non-blocking read")
     tic = time.time()
-    assert serial.read(4096 * 3, timeout=0) == b""
+    passert("read non-blocking is empty", serial.read(4096 * 3, timeout=0) == b"")
     toc = time.time()
     # Assuming we weren't context switched out for a second
-    assert int(toc - tic) == 0
+    passert("almost no time elapsed", int(toc - tic) == 0)
 
     # Test blocking read with vmin=5 termios timeout
     print("Check blocking read with vmin termios timeout")
     serial.vmin = 5
-    assert serial.write(lorem_ipsum[0:5]) == 5
+    passert("write 5 bytes of lorem ipsum", serial.write(lorem_ipsum[0:5]) == 5)
     serial.flush()
     buf = serial.read(len(lorem_ipsum))
-    assert buf == lorem_ipsum[0:5]
+    passert("compare readback partial lorem ipsum", buf == lorem_ipsum[0:5])
 
     # Test blocking read with vmin=5, vtime=2 termios timeout
     print("Check blocking read with vmin + vtime termios timeout")
     serial.vtime = 2
-    assert serial.write(lorem_ipsum[0:3]) == 3
+    passert("write 3 bytes of lorem ipsum", serial.write(lorem_ipsum[0:3]) == 3)
     serial.flush()
     tic = time.time()
     buf = serial.read(len(lorem_ipsum))
     toc = time.time()
-    assert buf == lorem_ipsum[0:3]
-    assert (toc - tic) > 1
+    passert("compare readback partial lorem ipsum", buf == lorem_ipsum[0:3])
+    passert("time elapsed", (toc - tic) > 1)
 
     serial.close()
 
-    print("Loopback test passed.")
-
 
 def test_interactive():
-    print("Starting interactive test...")
+    ptest()
 
     buf = b"Hello World!"
 
@@ -174,26 +170,24 @@ def test_interactive():
 
     # Check tostring
     print("Serial description: {}".format(str(serial)))
-    assert raw_input("Serial description looks ok? y/n ") == "y"
+    passert("interactive success", raw_input("Serial description looks ok? y/n ") == "y")
 
     serial.baudrate = 4800
     raw_input("Press enter to start transfer...")
-    assert serial.write(buf) == len(buf)
-    assert raw_input("Serial transfer baudrate 4800, 8n1 occurred? y/n ") == "y"
+    passert("serial write", serial.write(buf) == len(buf))
+    passert("interactive success", raw_input("Serial transfer baudrate 4800, 8n1 occurred? y/n ") == "y")
 
     serial.baudrate = 9600
     raw_input("Press enter to start transfer...")
-    assert serial.write(buf) == len(buf)
-    assert raw_input("Serial transfer baudrate 9600, 8n1 occurred? y/n ") == "y"
+    passert("serial write", serial.write(buf) == len(buf))
+    passert("interactive success", raw_input("Serial transfer baudrate 9600, 8n1 occurred? y/n ") == "y")
 
     serial.baudrate = 115200
     raw_input("Press enter to start transfer...")
-    assert serial.write(buf) == len(buf)
-    assert raw_input("Serial transfer baudrate 115200, 8n1 occurred? y/n ") == "y"
+    passert("serial write", serial.write(buf) == len(buf))
+    passert("interactive success", raw_input("Serial transfer baudrate 115200, 8n1 occurred? y/n ") == "y")
 
     serial.close()
-
-    print("Interactive test passed.")
 
 
 if __name__ == "__main__":
@@ -222,11 +216,13 @@ if __name__ == "__main__":
 
     serial_device = sys.argv[1]
 
-    print("Starting Serial tests...")
-
     test_arguments()
+    pokay("Arguments test passed.")
     test_open_close()
+    pokay("Open/close test passed.")
     test_loopback()
+    pokay("Loopback test passed.")
     test_interactive()
+    pokay("Interactive test passed.")
 
-    print("All Serial tests passed.")
+    pokay("All tests passed!")

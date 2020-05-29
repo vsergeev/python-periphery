@@ -1,11 +1,13 @@
 import os
 import sys
 import time
+
 import periphery
-from .asserts import AssertRaises
+from .test import ptest, pokay, passert, AssertRaises
 
 if sys.version_info[0] == 3:
     raw_input = input
+
 
 PAGE_SIZE = 4096
 CONTROL_MODULE_BASE = 0x44e10000
@@ -18,59 +20,56 @@ RTC_KICK1R_REG_OFFSET = 0x70
 
 
 def test_arguments():
-    print("Starting arguments test...")
-    print("Arguments test passed.")
+    ptest()
 
 
 def test_open_close():
-    print("Starting open/close test...")
+    ptest()
 
     # Open aligned base
     mmio = periphery.MMIO(CONTROL_MODULE_BASE, PAGE_SIZE)
     # Check properties
-    assert mmio.base == CONTROL_MODULE_BASE
-    assert mmio.size == PAGE_SIZE
+    passert("property base", mmio.base == CONTROL_MODULE_BASE)
+    passert("property size", mmio.size == PAGE_SIZE)
     # Try to write immutable properties
-    with AssertRaises(AttributeError):
+    with AssertRaises("write immutable", AttributeError):
         mmio.base = 1000
-    with AssertRaises(AttributeError):
+    with AssertRaises("write immutable", AttributeError):
         mmio.size = 1000
     mmio.close()
 
     # Open unaligned base
     mmio = periphery.MMIO(CONTROL_MODULE_BASE + 123, PAGE_SIZE)
     # Check properties
-    assert mmio.base == CONTROL_MODULE_BASE + 123
-    assert mmio.size == PAGE_SIZE
+    passert("property base", mmio.base == CONTROL_MODULE_BASE + 123)
+    passert("property size", mmio.size == PAGE_SIZE)
     # Read out of bounds
-    with AssertRaises(ValueError):
+    with AssertRaises("read 1 byte over", ValueError):
         mmio.read32(PAGE_SIZE - 3)
-    with AssertRaises(ValueError):
+    with AssertRaises("read 2 bytes over", ValueError):
         mmio.read32(PAGE_SIZE - 2)
-    with AssertRaises(ValueError):
+    with AssertRaises("read 3 bytes over", ValueError):
         mmio.read32(PAGE_SIZE - 1)
-    with AssertRaises(ValueError):
+    with AssertRaises("read 4 bytes over", ValueError):
         mmio.read32(PAGE_SIZE)
     mmio.close()
 
-    print("Open/close test passed.")
-
 
 def test_loopback():
-    print("Starting loopback test...")
+    ptest()
 
     # Open control module
     mmio = periphery.MMIO(CONTROL_MODULE_BASE, PAGE_SIZE)
 
     # Read and compare USB VID/PID with read32()
-    assert mmio.read32(USB_VID_PID_OFFSET) == USB_VID_PID
+    passert("compare USB VID/PID", mmio.read32(USB_VID_PID_OFFSET) == USB_VID_PID)
     # Read and compare USB VID/PID with bytes read
     data = mmio.read(USB_VID_PID_OFFSET, 4)
     data = bytearray(data)
-    assert data[0] == USB_VID_PID & 0xff
-    assert data[1] == (USB_VID_PID >> 8) & 0xff
-    assert data[2] == (USB_VID_PID >> 16) & 0xff
-    assert data[3] == (USB_VID_PID >> 24) & 0xff
+    passert("compare byte 1", data[0] == USB_VID_PID & 0xff)
+    passert("compare byte 2", data[1] == (USB_VID_PID >> 8) & 0xff)
+    passert("compare byte 3", data[2] == (USB_VID_PID >> 16) & 0xff)
+    passert("compare byte 4", data[3] == (USB_VID_PID >> 24) & 0xff)
 
     mmio.close()
 
@@ -83,44 +82,42 @@ def test_loopback():
 
     # Write/Read RTC Scratch2 Register
     mmio.write32(RTC_SCRATCH2_REG_OFFSET, 0xdeadbeef)
-    assert mmio.read32(RTC_SCRATCH2_REG_OFFSET) == 0xdeadbeef
+    passert("compare write 32-bit uint and readback", mmio.read32(RTC_SCRATCH2_REG_OFFSET) == 0xdeadbeef)
 
     # Write/Read RTC Scratch2 Register with bytes write
     mmio.write(RTC_SCRATCH2_REG_OFFSET, b"\xaa\xbb\xcc\xdd")
     data = mmio.read(RTC_SCRATCH2_REG_OFFSET, 4)
-    assert data == b"\xaa\xbb\xcc\xdd"
+    passert("compare write 4-byte bytes and readback", data == b"\xaa\xbb\xcc\xdd")
 
     # Write/Read RTC Scratch2 Register with bytearray write
     mmio.write(RTC_SCRATCH2_REG_OFFSET, bytearray(b"\xbb\xcc\xdd\xee"))
     data = mmio.read(RTC_SCRATCH2_REG_OFFSET, 4)
-    assert data == b"\xbb\xcc\xdd\xee"
+    passert("compare write 4-byte bytearray and readback", data == b"\xbb\xcc\xdd\xee")
 
     # Write/Read RTC Scratch2 Register with list write
     mmio.write(RTC_SCRATCH2_REG_OFFSET, [0xcc, 0xdd, 0xee, 0xff])
     data = mmio.read(RTC_SCRATCH2_REG_OFFSET, 4)
-    assert data == b"\xcc\xdd\xee\xff"
+    passert("compare write 4-byte list and readback", data == b"\xcc\xdd\xee\xff")
 
     # Write/Read RTC Scratch2 Register with 16-bit write
     mmio.write16(RTC_SCRATCH2_REG_OFFSET, 0xaabb)
-    assert mmio.read16(RTC_SCRATCH2_REG_OFFSET) == 0xaabb
+    passert("compare write 16-bit uint and readback", mmio.read16(RTC_SCRATCH2_REG_OFFSET) == 0xaabb)
 
     # Write/Read RTC Scratch2 Register with 8-bit write
-    mmio.write16(RTC_SCRATCH2_REG_OFFSET, 0xab)
-    assert mmio.read8(RTC_SCRATCH2_REG_OFFSET) == 0xab
+    mmio.write8(RTC_SCRATCH2_REG_OFFSET, 0xab)
+    passert("compare write 8-bit uint and readback", mmio.read8(RTC_SCRATCH2_REG_OFFSET) == 0xab)
 
     mmio.close()
 
-    print("Loopback test passed.")
-
 
 def test_interactive():
-    print("Starting interactive test...")
+    ptest()
 
     mmio = periphery.MMIO(RTCSS_BASE, PAGE_SIZE)
 
     # Check tostring
     print("MMIO description: {}".format(str(mmio)))
-    assert raw_input("MMIO description looks ok? y/n ") == "y"
+    passert("interactive success", raw_input("MMIO description looks ok? y/n ") == "y")
 
     print("Waiting for seconds ones digit to reset to 0...\n")
 
@@ -129,7 +126,7 @@ def test_interactive():
     tic = time.time()
     while mmio.read32(0x00) & 0xf != 0:
         periphery.sleep(1)
-        assert (time.time() - tic) < 12
+        passert("less than 12 seconds elapsed", (time.time() - tic) < 12)
 
     # Compare passage of OS time with RTC time
 
@@ -149,12 +146,10 @@ def test_interactive():
     toc = time.time()
     rtc_toc = mmio.read32(0x00) & 0xf
 
-    assert (toc - tic) > 2
-    assert (rtc_toc - rtc_tic) > 2
+    passert("real time elapsed", (toc - tic) > 2)
+    passert("rtc time elapsed", (rtc_toc - rtc_tic) > 2)
 
     mmio.close()
-
-    print("Interactive test passed.")
 
 
 if __name__ == "__main__":
@@ -166,11 +161,13 @@ if __name__ == "__main__":
     print("Other systems may experience unintended and dire consequences!")
     raw_input("Press enter to continue!")
 
-    print("Starting MMIO tests...")
-
     test_arguments()
+    pokay("Arguments test passed.")
     test_open_close()
+    pokay("Open/close test passed.")
     test_loopback()
+    pokay("Loopback test passed.")
     test_interactive()
+    pokay("Interactive test passed.")
 
-    print("All MMIO tests passed.")
+    pokay("All tests passed!")

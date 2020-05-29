@@ -1,96 +1,92 @@
 import os
 import sys
+
 import periphery
-from .asserts import AssertRaises
+from .test import ptest, pokay, passert, AssertRaises
 
 if sys.version_info[0] == 3:
     raw_input = input
+
 
 spi_device = None
 
 
 def test_arguments():
-    print("Starting arguments test...")
+    ptest()
 
     # Invalid mode
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid mode", ValueError):
         periphery.SPI("/dev/spidev0.0", 4, int(1e6))
     # Invalid bit order
-    with AssertRaises(ValueError):
+    with AssertRaises("invalid bit order", ValueError):
         periphery.SPI("/dev/spidev0.0", 4, int(1e6), bit_order="blah")
-
-    print("Arguments test passed.")
 
 
 def test_open_close():
-    print("Starting open/close test...")
+    ptest()
 
     # Normal open (mode=1, max_speed = 100000)
     spi = periphery.SPI(spi_device, 1, 100000)
 
     # Confirm fd and defaults
-    assert spi.fd > 0
-    assert spi.mode == 1
-    assert spi.max_speed == 100000
-    assert spi.bit_order == "msb"
-    assert spi.bits_per_word == 8
-    assert spi.extra_flags == 0
+    passert("fd > 0", spi.fd > 0)
+    passert("mode is 1", spi.mode == 1)
+    passert("max speed is 100000", spi.max_speed == 100000)
+    passert("default bit_order is msb", spi.bit_order == "msb")
+    passert("default bits_per_word is 8", spi.bits_per_word == 8)
+    passert("default extra_flags is 0", spi.extra_flags == 0)
 
     # Not going to try different bit order or bits per word, because not
     # all SPI controllers support them
 
     # Try modes 0, 1, 2, 3
     spi.mode = 0
-    assert spi.mode == 0
+    passert("spi mode is 0", spi.mode == 0)
     spi.mode = 1
-    assert spi.mode == 1
+    passert("spi mode is 1", spi.mode == 1)
     spi.mode = 2
-    assert spi.mode == 2
+    passert("spi mode is 2", spi.mode == 2)
     spi.mode = 3
-    assert spi.mode == 3
+    passert("spi mode is 3", spi.mode == 3)
 
     # Try max speeds 100Khz, 500KHz, 1MHz, 2MHz
     spi.max_speed = 100000
-    assert spi.max_speed == 100000
+    passert("max speed is 100KHz", spi.max_speed == 100000)
     spi.max_speed = 500000
-    assert spi.max_speed == 500000
+    passert("max speed is 500KHz", spi.max_speed == 500000)
     spi.max_speed = 1000000
-    assert spi.max_speed == 1000000
+    passert("max speed is 1MHz", spi.max_speed == 1000000)
     spi.max_speed = 2e6
-    assert spi.max_speed == 2000000
+    passert("max speed is 2MHz", spi.max_speed == 2000000)
 
     spi.close()
 
-    print("Open/close test passed.")
-
 
 def test_loopback():
-    print("Starting loopback test...")
+    ptest()
 
     spi = periphery.SPI(spi_device, 0, 100000)
 
     # Try list transfer
     buf_in = list(range(256)) * 4
     buf_out = spi.transfer(buf_in)
-    assert buf_out == buf_in
+    passert("compare readback", buf_out == buf_in)
 
     # Try bytearray transfer
     buf_in = bytearray(buf_in)
     buf_out = spi.transfer(buf_in)
-    assert buf_out == buf_in
+    passert("compare readback", buf_out == buf_in)
 
     # Try bytes transfer
     buf_in = bytes(bytearray(buf_in))
     buf_out = spi.transfer(buf_in)
-    assert buf_out == buf_in
+    passert("compare readback", buf_out == buf_in)
 
     spi.close()
 
-    print("Loopback test passed.")
-
 
 def test_interactive():
-    print("Starting interactive test...")
+    ptest()
 
     spi = periphery.SPI(spi_device, 0, 100000)
 
@@ -99,34 +95,34 @@ def test_interactive():
 
     # Check tostring
     print("SPI description: {}".format(str(spi)))
-    assert raw_input("SPI description looks ok? y/n ") == "y"
+    passert("interactive success", raw_input("SPI description looks ok? y/n ") == "y")
 
     # Mode 0 transfer
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
     print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
-    assert raw_input("SPI transfer speed <= 100KHz, mode 0 occurred? y/n ") == "y"
+    passert("interactive success", raw_input("SPI transfer speed <= 100KHz, mode 0 occurred? y/n ") == "y")
 
     # Mode 1 transfer
     spi.mode = 1
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
     print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
-    assert raw_input("SPI transfer speed <= 100KHz, mode 1 occurred? y/n ") == "y"
+    passert("interactive success", raw_input("SPI transfer speed <= 100KHz, mode 1 occurred? y/n ") == "y")
 
     # Mode 2 transfer
     spi.mode = 2
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
     print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
-    assert raw_input("SPI transfer speed <= 100KHz, mode 2 occurred? y/n ") == "y"
+    passert("interactive success", raw_input("SPI transfer speed <= 100KHz, mode 2 occurred? y/n ") == "y")
 
     # Mode 3 transfer
     spi.mode = 3
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
     print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
-    assert raw_input("SPI transfer speed <= 100KHz, mode 3 occurred? y/n ") == "y"
+    passert("interactive success", raw_input("SPI transfer speed <= 100KHz, mode 3 occurred? y/n ") == "y")
 
     spi.mode = 0
 
@@ -135,18 +131,16 @@ def test_interactive():
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
     print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
-    assert raw_input("SPI transfer speed <= 500KHz, mode 0 occurred? y/n ") == "y"
+    passert("interactive success", raw_input("SPI transfer speed <= 500KHz, mode 0 occurred? y/n ") == "y")
 
     # 1MHz transfer
     spi.max_speed = 1000000
     raw_input("Press enter to start transfer...")
     spi.transfer([0x55, 0xaa, 0x0f, 0xf0])
     print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
-    assert raw_input("SPI transfer speed <= 1MHz, mode 0 occurred? y/n ") == "y"
+    passert("interactive success", raw_input("SPI transfer speed <= 1MHz, mode 0 occurred? y/n ") == "y")
 
     spi.close()
-
-    print("Interactive test passed.")
 
 
 if __name__ == "__main__":
@@ -173,11 +167,13 @@ if __name__ == "__main__":
 
     spi_device = sys.argv[1]
 
-    print("Starting SPI tests...")
-
     test_arguments()
+    pokay("Arguments test passed.")
     test_open_close()
+    pokay("Open/close test passed.")
     test_loopback()
+    pokay("Loopback test passed.")
     test_interactive()
+    pokay("Interactive test passed.")
 
-    print("All SPI tests passed.")
+    pokay("All tests passed!")
