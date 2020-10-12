@@ -672,6 +672,9 @@ class CdevGPIO(GPIO):
         return bool(data.values[0])
 
     def write(self, value):
+        if self.direction == "in":
+            raise GPIOError(1, "Cannot write to a line opened for input.")
+
         if not isinstance(value, bool):
             raise TypeError("Invalid value type, should be bool.")
 
@@ -685,6 +688,9 @@ class CdevGPIO(GPIO):
             raise GPIOError(e.errno, "Setting line value: " + e.strerror)
 
     def poll(self, timeout=None):
+        if self.direction != "in":
+            raise GPIOError(1, "Cannot poll a line opened for output.")
+
         if not isinstance(timeout, (int, float, type(None))):
             raise TypeError("Invalid timeout type, should be integer, float, or None.")
 
@@ -702,6 +708,9 @@ class CdevGPIO(GPIO):
         return len(events) > 0
 
     def read_event(self):
+        if self.direction != "in":
+            raise GPIOError(1, "Cannot read events from a line opened for output.")
+
         if self._edge == "none":
             raise GPIOError(None, "Invalid operation: GPIO edge not set")
 
@@ -1065,6 +1074,9 @@ class SysfsGPIO(GPIO):
         raise GPIOError(None, "Unknown GPIO value: {}".format(buf))
 
     def write(self, value):
+        if self.direction == "in":
+            raise GPIOError(1, "Cannot write to a line opened for input.")
+
         if not isinstance(value, bool):
             raise TypeError("Invalid value type, should be bool.")
 
