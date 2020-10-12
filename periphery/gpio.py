@@ -674,6 +674,8 @@ class CdevGPIO(GPIO):
     def write(self, value):
         if not isinstance(value, bool):
             raise TypeError("Invalid value type, should be bool.")
+        elif self._direction != "out":
+            raise GPIOError(None, "Invalid operation: cannot write to input GPIO")
 
         data = _CGpiohandleData()
 
@@ -687,6 +689,8 @@ class CdevGPIO(GPIO):
     def poll(self, timeout=None):
         if not isinstance(timeout, (int, float, type(None))):
             raise TypeError("Invalid timeout type, should be integer, float, or None.")
+        elif self._direction != "in":
+            raise GPIOError(None, "Invalid operation: cannot poll output GPIO")
 
         # Setup poll
         p = select.poll()
@@ -702,7 +706,9 @@ class CdevGPIO(GPIO):
         return len(events) > 0
 
     def read_event(self):
-        if self._edge == "none":
+        if self._direction != "in":
+            raise GPIOError(None, "Invalid operation: cannot read event of output GPIO")
+        elif self._edge == "none":
             raise GPIOError(None, "Invalid operation: GPIO edge not set")
 
         try:
