@@ -1,3 +1,10 @@
+* v2.1.1 - 11/19/2020
+    * GPIO
+        * Add direction checks for improved error reporting to `write()`,
+          `read_event()`, and `poll()` for character device GPIOs.
+    * Contributors
+        * Michael Murton, @CrazyIvan359 - 69bd36e
+
 * v2.1.0 - 05/29/2020
     * GPIO
         * Add `poll_multiple()` static method.
