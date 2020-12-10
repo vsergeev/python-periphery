@@ -16,13 +16,17 @@ class MMIOError(IOError):
 
 
 class MMIO(object):
-    def __init__(self, physaddr, size):
+    def __init__(self, physaddr, size, path="/dev/mem"):
         """Instantiate an MMIO object and map the region of physical memory
-        specified by the address base `physaddr` and size `size` in bytes.
+        specified by the `physaddr` base physical address and `size` size in
+        bytes. The default memory character device "/dev/mem" can be overridden
+        with the keyword argument `path`, for use with sandboxed memory
+        character devices, e.g. "/dev/gpiomem".
 
         Args:
             physaddr (int, long): base physical address of memory region.
             size (int, long): size of memory region.
+            path (str): memory character device path.
 
         Returns:
             MMIO: MMIO object.
@@ -33,7 +37,7 @@ class MMIO(object):
 
         """
         self.mapping = None
-        self._open(physaddr, size)
+        self._open(physaddr, size, path)
 
     def __del__(self):
         self.close()
@@ -44,7 +48,7 @@ class MMIO(object):
     def __exit__(self, t, value, traceback):
         self.close()
 
-    def _open(self, physaddr, size):
+    def _open(self, physaddr, size, path):
         if not isinstance(physaddr, (int, long)):
             raise TypeError("Invalid physaddr type, should be integer.")
         if not isinstance(size, (int, long)):
@@ -58,19 +62,19 @@ class MMIO(object):
         self._aligned_size = size + (physaddr - self._aligned_physaddr)
 
         try:
-            fd = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
+            fd = os.open(path, os.O_RDWR | os.O_SYNC)
         except OSError as e:
-            raise MMIOError(e.errno, "Opening /dev/mem: " + e.strerror)
+            raise MMIOError(e.errno, "Opening {:s}: {:s}".format(path, e.strerror))
 
         try:
             self.mapping = mmap.mmap(fd, self._aligned_size, flags=mmap.MAP_SHARED, prot=(mmap.PROT_READ | mmap.PROT_WRITE), offset=self._aligned_physaddr)
         except OSError as e:
-            raise MMIOError(e.errno, "Mapping /dev/mem: " + e.strerror)
+            raise MMIOError(e.errno, "Mapping {:s}: {:s}".format(path, e.strerror))
 
         try:
             os.close(fd)
         except OSError as e:
-            raise MMIOError(e.errno, "Closing /dev/mem: " + e.strerror)
+            raise MMIOError(e.errno, "Closing {:s}: {:s}".format(path, e.strerror))
 
     # Methods
 
