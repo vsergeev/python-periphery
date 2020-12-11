@@ -439,5 +439,5 @@ class SPI(object):
     # String representation
 
     def __str__(self):
-        return "SPI (device={:s}, fd={:d}, mode={:d}, max_speed={:d}, bit_order={:s}, bits_per_word={:d}, extra_flags=0x{:02x})" \
+        return "SPI (device={:s}, fd={:d}, mode={:d}, max_speed={:d}, bit_order={:s}, bits_per_word={:d}, extra_flags=0x{:08x})" \
             .format(self.devpath, self.fd, self.mode, self.max_speed, self.bit_order, self.bits_per_word, self.extra_flags)
