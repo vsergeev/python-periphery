@@ -31,6 +31,8 @@ class SPI(object):
     _SPI_LSB_FIRST = 0x8
     _SPI_IOC_WR_MODE = 0x40016b01
     _SPI_IOC_RD_MODE = 0x80016b01
+    _SPI_IOC_WR_MODE32 = 0x40046b05
+    _SPI_IOC_RD_MODE32 = 0x80046b05
     _SPI_IOC_WR_MAX_SPEED_HZ = 0x40046b04
     _SPI_IOC_RD_MAX_SPEED_HZ = 0x80046b04
     _SPI_IOC_WR_BITS_PER_WORD = 0x40016b03
@@ -370,7 +372,15 @@ class SPI(object):
     """
 
     def _get_extra_flags(self):
-        # Get mode
+        # Attempt getting 32-bit mode
+        buf = array.array('I', [0])
+        try:
+            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE32, buf, True)
+            return buf[0] & ~(SPI._SPI_LSB_FIRST | SPI._SPI_CPHA | SPI._SPI_CPOL)
+        except (OSError, IOError):
+            pass
+
+        # Fallback to getting 8-bit mode
         buf = array.array('B', [0])
         try:
             fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
@@ -382,15 +392,21 @@ class SPI(object):
     def _set_extra_flags(self, extra_flags):
         if not isinstance(extra_flags, int):
             raise TypeError("Invalid extra_flags type, should be integer.")
-        if extra_flags < 0 or extra_flags > 255:
-            raise ValueError("Invalid extra_flags, must be 0-255.")
 
         # Read-modify-write mode, because the mode contains bits for other settings
 
+        if extra_flags > 0xff:
+            buf = array.array('I', [0])
+            rd_cmd = SPI._SPI_IOC_RD_MODE32
+            wr_cmd = SPI._SPI_IOC_WR_MODE32
+        else:
+            buf = array.array('B', [0])
+            rd_cmd = SPI._SPI_IOC_RD_MODE
+            wr_cmd = SPI._SPI_IOC_WR_MODE
+
         # Get mode
-        buf = array.array('B', [0])
         try:
-            fcntl.ioctl(self._fd, SPI._SPI_IOC_RD_MODE, buf, True)
+            fcntl.ioctl(self._fd, rd_cmd, buf, True)
         except (OSError, IOError) as e:
             raise SPIError(e.errno, "Getting SPI mode: " + e.strerror)
 
@@ -398,7 +414,7 @@ class SPI(object):
 
         # Set mode
         try:
-            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
+            fcntl.ioctl(self._fd, wr_cmd, buf, False)
         except (OSError, IOError) as e:
             raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
