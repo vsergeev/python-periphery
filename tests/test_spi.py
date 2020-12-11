@@ -34,7 +34,6 @@ def test_open_close():
     passert("max speed is 100000", spi.max_speed == 100000)
     passert("default bit_order is msb", spi.bit_order == "msb")
     passert("default bits_per_word is 8", spi.bits_per_word == 8)
-    passert("default extra_flags is 0", spi.extra_flags == 0)
 
     # Not going to try different bit order or bits per word, because not
     # all SPI controllers support them
