@@ -94,8 +94,6 @@ class SPI(object):
             raise ValueError("Invalid bit_order, can be \"msb\" or \"lsb\".")
         elif bits_per_word < 0 or bits_per_word > 255:
             raise ValueError("Invalid bits_per_word, must be 0-255.")
-        elif extra_flags < 0 or extra_flags > 255:
-            raise ValueError("Invalid extra_flags, must be 0-255.")
 
         # Open spidev
         try:
@@ -108,11 +106,20 @@ class SPI(object):
         bit_order = bit_order.lower()
 
         # Set mode, bit order, extra flags
-        buf = array.array("B", [mode | (SPI._SPI_LSB_FIRST if bit_order == "lsb" else 0) | extra_flags])
-        try:
-            fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
-        except (OSError, IOError) as e:
-            raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
+        if extra_flags > 0xff:
+            # Use 32-bit mode if extra flags is wider than 8-bits
+            buf = array.array("I", [mode | (SPI._SPI_LSB_FIRST if bit_order == "lsb" else 0) | extra_flags])
+            try:
+                fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE32, buf, False)
+            except (OSError, IOError) as e:
+                raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
+        else:
+            # Prefer 8-bit mode for compatibility with older kernels
+            buf = array.array("B", [mode | (SPI._SPI_LSB_FIRST if bit_order == "lsb" else 0) | extra_flags])
+            try:
+                fcntl.ioctl(self._fd, SPI._SPI_IOC_WR_MODE, buf, False)
+            except (OSError, IOError) as e:
+                raise SPIError(e.errno, "Setting SPI mode: " + e.strerror)
 
         # Set max speed
         buf = array.array("I", [int(max_speed)])
