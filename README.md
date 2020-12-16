@@ -46,7 +46,7 @@ gpio_in.close()
 gpio_out.close()
 ```
 
-[Go to GPIO documentation.](http://python-periphery.readthedocs.org/en/latest/gpio.html)
+[Go to GPIO documentation.](https://python-periphery.readthedocs.io/en/latest/gpio.html)
 
 ### LED
 
@@ -68,7 +68,7 @@ led0.close()
 led1.close()
 ```
 
-[Go to LED documentation.](http://python-periphery.readthedocs.org/en/latest/led.html)
+[Go to LED documentation.](https://python-periphery.readthedocs.io/en/latest/led.html)
 
 ### PWM
 
@@ -91,7 +91,7 @@ pwm.duty_cycle = 0.50
 pwm.close()
 ```
 
-[Go to PWM documentation.](http://python-periphery.readthedocs.org/en/latest/pwm.html)
+[Go to PWM documentation.](https://python-periphery.readthedocs.io/en/latest/pwm.html)
 
 ### SPI
 
@@ -110,7 +110,7 @@ print("shifted in  [0x{:02x}, 0x{:02x}, 0x{:02x}, 0x{:02x}]".format(*data_in))
 spi.close()
 ```
 
-[Go to SPI documentation.](http://python-periphery.readthedocs.org/en/latest/spi.html)
+[Go to SPI documentation.](https://python-periphery.readthedocs.io/en/latest/spi.html)
 
 ### I2C
 
@@ -128,7 +128,7 @@ print("0x100: 0x{:02x}".format(msgs[1].data[0]))
 i2c.close()
 ```
 
-[Go to I2C documentation.](http://python-periphery.readthedocs.org/en/latest/i2c.html)
+[Go to I2C documentation.](https://python-periphery.readthedocs.io/en/latest/i2c.html)
 
 ### MMIO
 
@@ -159,7 +159,7 @@ print("MAC address: {:04x}{:08x}".format(mac_id0_lo, mac_id0_hi))
 ctrl_mmio.close()
 ```
 
-[Go to MMIO documentation.](http://python-periphery.readthedocs.org/en/latest/mmio.html)
+[Go to MMIO documentation.](https://python-periphery.readthedocs.io/en/latest/mmio.html)
 
 ### Serial
 
@@ -178,11 +178,11 @@ print("read {:d} bytes: _{:s}_".format(len(buf), buf))
 serial.close()
 ```
 
-[Go to Serial documentation.](http://python-periphery.readthedocs.org/en/latest/serial.html)
+[Go to Serial documentation.](https://python-periphery.readthedocs.io/en/latest/serial.html)
 
 ## Documentation
 
-Documentation is hosted at [http://python-periphery.readthedocs.org/](http://python-periphery.readthedocs.org/).
+Documentation is hosted at [https://python-periphery.readthedocs.io](https://python-periphery.readthedocs.io).
 
 To build documentation locally with Sphinx, run:
 
