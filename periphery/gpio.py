@@ -4,8 +4,14 @@ import errno
 import fcntl
 import os
 import os.path
+import platform
 import select
 import time
+
+try:
+    KERNEL_VERSION = tuple([int(s) for s in platform.release().split(".")[:2]])
+except ValueError:
+    KERNEL_VERSION = (0,0)
 
 
 class GPIOError(IOError):
@@ -418,6 +424,7 @@ class _CGpioeventData(ctypes.Structure):
 
 
 class CdevGPIO(GPIO):
+    _SUPPORTS_LINE_BIAS = KERNEL_VERSION >= (5, 5)
     # Constants scraped from <linux/gpio.h>
     _GPIOHANDLE_GET_LINE_VALUES_IOCTL = 0xc040b408
     _GPIOHANDLE_SET_LINE_VALUES_IOCTL = 0xc040b409
@@ -510,6 +517,8 @@ class CdevGPIO(GPIO):
             raise TypeError("Invalid bias type, should be string.")
         elif bias.lower() not in ["default", "pull_up", "pull_down", "disable"]:
             raise ValueError("Invalid bias, can be: \"default\", \"pull_up\", \"pull_down\", \"disable\".")
+        elif bias.lower() != "default" and not self._SUPPORTS_LINE_BIAS:
+            raise GPIOError("Line bias setting not supported by kernel version " + ".".join([str(i) for i in KERNEL_VERSION]))
 
         if not isinstance(drive, str):
             raise TypeError("Invalid drive type, should be string.")
@@ -857,6 +866,8 @@ class CdevGPIO(GPIO):
             raise TypeError("Invalid bias type, should be string.")
         if bias.lower() not in ["default", "pull_up", "pull_down", "disable"]:
             raise ValueError("Invalid bias, can be: \"default\", \"pull_up\", \"pull_down\", \"disable\".")
+        if bias.lower() != "default" and not self._SUPPORTS_LINE_BIAS:
+            raise GPIOError("Line bias setting not supported by kernel version " + ".".join([str(i) for i in KERNEL_VERSION]))
 
         if self._bias == bias:
             return
