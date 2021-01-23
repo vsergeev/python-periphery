@@ -4,8 +4,15 @@ import errno
 import fcntl
 import os
 import os.path
+import platform
 import select
 import time
+
+
+try:
+    KERNEL_VERSION = tuple([int(s) for s in platform.release().split(".")[:2]])
+except ValueError:
+    KERNEL_VERSION = (0, 0)
 
 
 class GPIOError(IOError):
@@ -439,6 +446,8 @@ class CdevGPIO(GPIO):
     _GPIOEVENT_EVENT_RISING_EDGE = 0x1
     _GPIOEVENT_EVENT_FALLING_EDGE = 0x2
 
+    _SUPPORTS_LINE_BIAS = KERNEL_VERSION >= (5, 5)
+
     def __init__(self, path, line, direction, edge="none", bias="default", drive="default", inverted=False, label=None):
         """**Character device GPIO**
 
@@ -540,7 +549,9 @@ class CdevGPIO(GPIO):
     def _reopen(self, direction, edge, bias, drive, inverted):
         flags = 0
 
-        if bias == "pull_up":
+        if bias != "default" and not CdevGPIO._SUPPORTS_LINE_BIAS:
+            raise GPIOError(None, "Line bias configuration not supported by kernel version {}.{}.".format(*KERNEL_VERSION))
+        elif bias == "pull_up":
             flags |= CdevGPIO._GPIOHANDLE_REQUEST_BIAS_PULL_UP
         elif bias == "pull_down":
             flags |= CdevGPIO._GPIOHANDLE_REQUEST_BIAS_PULL_DOWN
