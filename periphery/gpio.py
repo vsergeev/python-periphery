@@ -507,22 +507,22 @@ class CdevGPIO(GPIO):
 
         if not isinstance(direction, str):
             raise TypeError("Invalid direction type, should be string.")
-        elif direction.lower() not in ["in", "out", "high", "low"]:
+        elif direction not in ["in", "out", "high", "low"]:
             raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
 
         if not isinstance(edge, str):
             raise TypeError("Invalid edge type, should be string.")
-        elif edge.lower() not in ["none", "rising", "falling", "both"]:
+        elif edge not in ["none", "rising", "falling", "both"]:
             raise ValueError("Invalid edge, can be: \"none\", \"rising\", \"falling\", \"both\".")
 
         if not isinstance(bias, str):
             raise TypeError("Invalid bias type, should be string.")
-        elif bias.lower() not in ["default", "pull_up", "pull_down", "disable"]:
+        elif bias not in ["default", "pull_up", "pull_down", "disable"]:
             raise ValueError("Invalid bias, can be: \"default\", \"pull_up\", \"pull_down\", \"disable\".")
 
         if not isinstance(drive, str):
             raise TypeError("Invalid drive type, should be string.")
-        elif drive.lower() not in ["default", "open_drain", "open_source"]:
+        elif drive not in ["default", "open_drain", "open_source"]:
             raise ValueError("Invalid drive, can be: \"default\", \"open_drain\", \"open_source\".")
 
         if not isinstance(inverted, bool):
@@ -831,7 +831,7 @@ class CdevGPIO(GPIO):
     def _set_direction(self, direction):
         if not isinstance(direction, str):
             raise TypeError("Invalid direction type, should be string.")
-        if direction.lower() not in ["in", "out", "high", "low"]:
+        if direction not in ["in", "out", "high", "low"]:
             raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
 
         if self._direction == direction:
@@ -847,7 +847,7 @@ class CdevGPIO(GPIO):
     def _set_edge(self, edge):
         if not isinstance(edge, str):
             raise TypeError("Invalid edge type, should be string.")
-        if edge.lower() not in ["none", "rising", "falling", "both"]:
+        if edge not in ["none", "rising", "falling", "both"]:
             raise ValueError("Invalid edge, can be: \"none\", \"rising\", \"falling\", \"both\".")
 
         if self._direction != "in":
@@ -866,7 +866,7 @@ class CdevGPIO(GPIO):
     def _set_bias(self, bias):
         if not isinstance(bias, str):
             raise TypeError("Invalid bias type, should be string.")
-        if bias.lower() not in ["default", "pull_up", "pull_down", "disable"]:
+        if bias not in ["default", "pull_up", "pull_down", "disable"]:
             raise ValueError("Invalid bias, can be: \"default\", \"pull_up\", \"pull_down\", \"disable\".")
 
         if self._bias == bias:
@@ -882,7 +882,7 @@ class CdevGPIO(GPIO):
     def _set_drive(self, drive):
         if not isinstance(drive, str):
             raise TypeError("Invalid drive type, should be string.")
-        if drive.lower() not in ["default", "open_drain", "open_source"]:
+        if drive not in ["default", "open_drain", "open_source"]:
             raise ValueError("Invalid drive, can be: \"default\", \"open_drain\", \"open_source\".")
 
         if self._direction != "out" and drive != "default":
