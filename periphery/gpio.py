@@ -175,7 +175,7 @@ class GPIO(object):
         return results
 
     def close(self):
-        """Close the sysfs GPIO.
+        """Close the GPIO.
 
         Raises:
             GPIOError: if an I/O or OS error occurs.
