@@ -305,7 +305,7 @@ class MMIO(object):
 
         :type: ctypes.c_void_p
         """
-        return ctypes.cast(ctypes.pointer(ctypes.c_uint8.from_buffer(self.mapping, 0)), ctypes.c_void_p)
+        return ctypes.cast(ctypes.pointer(ctypes.c_uint8.from_buffer(self.mapping, self._adjust_offset(0))), ctypes.c_void_p)
 
     # String representation
 
