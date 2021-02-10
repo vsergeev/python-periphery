@@ -105,7 +105,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
-        return struct.unpack("=L", self.mapping[offset:offset + 4])[0]
+        return ctypes.c_uint32.from_buffer(self.mapping, offset).value
 
     def read16(self, offset):
         """Read 16-bits from the specified `offset` in bytes, relative to the
@@ -127,7 +127,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
-        return struct.unpack("=H", self.mapping[offset:offset + 2])[0]
+        return ctypes.c_uint16.from_buffer(self.mapping, offset).value
 
     def read8(self, offset):
         """Read 8-bits from the specified `offset` in bytes, relative to the
@@ -149,7 +149,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
-        return struct.unpack("B", self.mapping[offset:offset + 1])[0]
+        return ctypes.c_uint8.from_buffer(self.mapping, offset).value
 
     def read(self, offset, length):
         """Read a string of bytes from the specified `offset` in bytes,
@@ -196,7 +196,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 4)
-        self.mapping[offset:offset + 4] = struct.pack("=L", value)
+        ctypes.c_uint32.from_buffer(self.mapping, offset).value = value
 
     def write16(self, offset, value):
         """Write 16-bits to the specified `offset` in bytes, relative to the
@@ -220,7 +220,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 2)
-        self.mapping[offset:offset + 2] = struct.pack("=H", value)
+        ctypes.c_uint16.from_buffer(self.mapping, offset).value = value
 
     def write8(self, offset, value):
         """Write 8-bits to the specified `offset` in bytes, relative to the
@@ -244,7 +244,7 @@ class MMIO(object):
 
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, 1)
-        self.mapping[offset:offset + 1] = struct.pack("B", value)
+        ctypes.c_uint8.from_buffer(self.mapping, offset).value = value
 
     def write(self, offset, data):
         """Write a string of bytes to the specified `offset` in bytes, relative
