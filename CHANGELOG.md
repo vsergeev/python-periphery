@@ -1,3 +1,16 @@
+* v2.3.0 - 02/14/2021
+    * GPIO
+        * Add kernel version check for line bias support.
+        * Fix docstring for `close()`.
+    * SPI
+        * Add kernel version check for 32-bit mode support.
+    * MMIO
+        * Fix duplicate transactions in integral read and write methods.
+        * Fix memory offset of `pointer` property.
+    * Contributors
+        * Michael Murton, @CrazyIvan359 - 9c1a4f3
+        * @paul-demo - b318a6a
+
 * v2.2.0 - 12/16/2020
     * MMIO
         * Add `path` keyword argument to constructor for use with alternate
