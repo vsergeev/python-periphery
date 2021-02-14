@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = u'python-periphery'
-copyright = u'2015-2020, vsergeev / Ivan (Vanya) A. Sergeev'
+copyright = u'2015-2021, vsergeev / Ivan (Vanya) A. Sergeev'
 author = u'Vanya A. Sergeev'
 
 # The short X.Y version.
