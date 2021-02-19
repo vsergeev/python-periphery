@@ -6,7 +6,7 @@ python-periphery is a pure Python library for GPIO, LED, PWM, SPI, I2C, MMIO, an
 
 Using Lua or C? Check out the [lua-periphery](https://github.com/vsergeev/lua-periphery) and [c-periphery](https://github.com/vsergeev/c-periphery) projects.
 
-Contributed libraries: [java-periphery](https://github.com/sgjava/java-periphery)
+Contributed libraries: [java-periphery](https://github.com/sgjava/java-periphery), [dart_periphery](https://github.com/pezi/dart_periphery)
 
 ## Installation
 
