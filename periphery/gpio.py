@@ -1220,6 +1220,9 @@ class SysfsGPIO(GPIO):
         if direction.lower() not in ["in", "out", "high", "low"]:
             raise ValueError("Invalid direction, can be: \"in\", \"out\", \"high\", \"low\".")
 
+        if self._direction == direction:
+            return
+
         # Write direction
         try:
             with open(os.path.join(self._path, "direction"), "w") as f_direction:
