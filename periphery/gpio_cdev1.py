@@ -13,10 +13,14 @@ except ValueError:
     KERNEL_VERSION = (0, 0)
 
 
+_GPIO_NAME_MAX_SIZE = 32
+_GPIOHANDLES_MAX = 64
+
+
 class _CGpiochipInfo(ctypes.Structure):
     _fields_ = [
-        ('name', ctypes.c_char * 32),
-        ('label', ctypes.c_char * 32),
+        ('name', ctypes.c_char * _GPIO_NAME_MAX_SIZE),
+        ('label', ctypes.c_char * _GPIO_NAME_MAX_SIZE),
         ('lines', ctypes.c_uint32),
     ]
 
@@ -25,17 +29,17 @@ class _CGpiolineInfo(ctypes.Structure):
     _fields_ = [
         ('line_offset', ctypes.c_uint32),
         ('flags', ctypes.c_uint32),
-        ('name', ctypes.c_char * 32),
-        ('consumer', ctypes.c_char * 32),
+        ('name', ctypes.c_char * _GPIO_NAME_MAX_SIZE),
+        ('consumer', ctypes.c_char * _GPIO_NAME_MAX_SIZE),
     ]
 
 
 class _CGpiohandleRequest(ctypes.Structure):
     _fields_ = [
-        ('lineoffsets', ctypes.c_uint32 * 64),
+        ('lineoffsets', ctypes.c_uint32 * _GPIOHANDLES_MAX),
         ('flags', ctypes.c_uint32),
-        ('default_values', ctypes.c_uint8 * 64),
-        ('consumer_label', ctypes.c_char * 32),
+        ('default_values', ctypes.c_uint8 * _GPIOHANDLES_MAX),
+        ('consumer_label', ctypes.c_char * _GPIO_NAME_MAX_SIZE),
         ('lines', ctypes.c_uint32),
         ('fd', ctypes.c_int),
     ]
@@ -43,7 +47,7 @@ class _CGpiohandleRequest(ctypes.Structure):
 
 class _CGpiohandleData(ctypes.Structure):
     _fields_ = [
-        ('values', ctypes.c_uint8 * 64),
+        ('values', ctypes.c_uint8 * _GPIOHANDLES_MAX),
     ]
 
 
@@ -52,7 +56,7 @@ class _CGpioeventRequest(ctypes.Structure):
         ('lineoffset', ctypes.c_uint32),
         ('handleflags', ctypes.c_uint32),
         ('eventflags', ctypes.c_uint32),
-        ('consumer_label', ctypes.c_char * 32),
+        ('consumer_label', ctypes.c_char * _GPIO_NAME_MAX_SIZE),
         ('fd', ctypes.c_int),
     ]
 
