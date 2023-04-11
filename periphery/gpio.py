@@ -363,7 +363,8 @@ class GPIO(object):
 
 # Assign GPIO classes
 from . import gpio_cdev1
+from . import gpio_cdev2
 from . import gpio_sysfs
 
-CdevGPIO = gpio_cdev1.Cdev1GPIO
+CdevGPIO = gpio_cdev2.Cdev2GPIO if gpio_cdev2.Cdev2GPIO.SUPPORTED else gpio_cdev1.Cdev1GPIO
 SysfsGPIO = gpio_sysfs.SysfsGPIO
