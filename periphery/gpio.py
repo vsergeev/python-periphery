@@ -962,10 +962,10 @@ class CdevGPIO(GPIO):
 
 
 class SysfsGPIO(GPIO):
-    # Number of retries to check for GPIO export or direction write on open
-    GPIO_OPEN_RETRIES = 10
+    # Number of retries to check for GPIO export or direction on open
+    GPIO_STAT_RETRIES = 10
     # Delay between check for GPIO export or direction write on open (100ms)
-    GPIO_OPEN_DELAY = 0.1
+    GPIO_STAT_DELAY = 0.1
 
     def __init__(self, line, direction):
         """**Sysfs GPIO**
@@ -1020,28 +1020,27 @@ class SysfsGPIO(GPIO):
                 raise GPIOError(e.errno, "Exporting GPIO: " + e.strerror)
 
             # Loop until GPIO is exported
-            for i in range(SysfsGPIO.GPIO_OPEN_RETRIES):
+            for i in range(SysfsGPIO.GPIO_STAT_RETRIES):
                 if os.path.isdir(gpio_path):
                     self._exported = True
                     break
 
-                time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
+                time.sleep(SysfsGPIO.GPIO_STAT_DELAY)
 
             if not self._exported:
                 raise TimeoutError("Exporting GPIO: waiting for \"{:s}\" timed out".format(gpio_path))
 
-            # Write direction, looping in case of EACCES errors due to delayed udev
-            # permission rule application after export
-            for i in range(SysfsGPIO.GPIO_OPEN_RETRIES):
+            # Loop until direction is writable. This could take some time after
+            # export as application of udev rules after export is asynchronous.
+            for i in range(SysfsGPIO.GPIO_STAT_RETRIES):
                 try:
-                    with open(os.path.join(gpio_path, "direction"), "w") as f_direction:
-                        f_direction.write(direction.lower() + "\n")
-                    break
+                    with open(os.path.join(gpio_path, "direction"), 'w'):
+                        break
                 except IOError as e:
-                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == SysfsGPIO.GPIO_OPEN_RETRIES - 1):
-                        raise GPIOError(e.errno, "Setting GPIO direction: " + e.strerror)
+                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == SysfsGPIO.GPIO_STAT_RETRIES - 1):
+                        raise GPIOError(e.errno, "Opening GPIO direction: " + e.strerror)
 
-                time.sleep(SysfsGPIO.GPIO_OPEN_DELAY)
+                time.sleep(SysfsGPIO.GPIO_STAT_DELAY)
 
         # Open value
         try:
@@ -1053,11 +1052,8 @@ class SysfsGPIO(GPIO):
         self._path = gpio_path
 
         # Initialize direction
-        if not self._exported:
+        if self.direction != direction.lower():
             self.direction = direction
-
-        # Initialize inverted
-        self.inverted = False
 
     # Methods
 
