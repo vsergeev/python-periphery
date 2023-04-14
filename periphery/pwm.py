@@ -10,9 +10,9 @@ class PWMError(IOError):
 
 class PWM(object):
     # Number of retries to check for successful PWM export on open
-    PWM_STAT_RETRIES = 10
+    _PWM_STAT_RETRIES = 10
     # Delay between check for scucessful PWM export on open (100ms)
-    PWM_STAT_DELAY = 0.1
+    _PWM_STAT_DELAY = 0.1
 
     def __init__(self, chip, channel):
         """Instantiate a PWM object and open the sysfs PWM corresponding to the
@@ -69,27 +69,27 @@ class PWM(object):
 
             # Loop until PWM is exported
             exported = False
-            for i in range(PWM.PWM_STAT_RETRIES):
+            for i in range(PWM._PWM_STAT_RETRIES):
                 if os.path.isdir(channel_path):
                     exported = True
                     break
 
-                time.sleep(PWM.PWM_STAT_DELAY)
+                time.sleep(PWM._PWM_STAT_DELAY)
 
             if not exported:
                 raise TimeoutError("Exporting PWM: waiting for \"{:s}\" timed out".format(channel_path))
 
             # Loop until period is writable. This could take some time after
             # export as application of udev rules after export is asynchronous.
-            for i in range(PWM.PWM_STAT_RETRIES):
+            for i in range(PWM._PWM_STAT_RETRIES):
                 try:
                     with open(os.path.join(channel_path, "period"), 'w'):
                         break
                 except IOError as e:
-                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == PWM.PWM_STAT_RETRIES - 1):
+                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == PWM._PWM_STAT_RETRIES - 1):
                         raise PWMError(e.errno, "Opening PWM period: " + e.strerror)
 
-                time.sleep(PWM.PWM_STAT_DELAY)
+                time.sleep(PWM._PWM_STAT_DELAY)
 
         self._chip = chip
         self._channel = channel
