@@ -2,7 +2,6 @@ import sys
 import os
 import mmap
 import ctypes
-import struct
 
 
 # Alias long to int on Python 3
