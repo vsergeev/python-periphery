@@ -8,7 +8,11 @@ python:
   - "pypy"
   - "pypy3"
 
+install:
+  - if [[ $TRAVIS_PYTHON_VERSION =~ ^3.[67]$ ]]; then pip install mypy; fi
+
 script:
+  - if [[ $TRAVIS_PYTHON_VERSION =~ ^3.[67]$ ]]; then mypy periphery; fi
   - python -m tests.test_gpio
   - python -m tests.test_gpio_sysfs
   - python -m tests.test_spi
