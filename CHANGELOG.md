@@ -1,3 +1,12 @@
+* v2.4.0 - 04/17/2023
+    * GPIO
+        * Avoid writing `direction` and `inverted` on open to retain existing
+          state with sysfs GPIOs
+        * Add support for gpio-cdev v2 ABI.
+    * Add type stubs.
+    * Contributors
+        * Juho Kim, @AussieSeaweed - ea1ecc2
+
 * v2.3.0 - 02/14/2021
     * GPIO
         * Add kernel version check for line bias support.
