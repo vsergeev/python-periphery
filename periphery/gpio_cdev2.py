@@ -121,6 +121,7 @@ class Cdev2GPIO(GPIO):
     _GPIO_V2_LINE_FLAG_BIAS_PULL_UP = 0x100
     _GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN = 0x200
     _GPIO_V2_LINE_FLAG_BIAS_DISABLED = 0x400
+    _GPIO_V2_LINE_FLAG_EVENT_CLOCK_REALTIME = 0x800
 
     SUPPORTED = KERNEL_VERSION >= (5, 10)
 
@@ -257,6 +258,7 @@ class Cdev2GPIO(GPIO):
 
         if direction == "in":
             flags |= Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_RISING if edge == "rising" else Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_FALLING if edge == "falling" else (Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_RISING | Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_FALLING) if edge == "both" else 0
+            flags |= Cdev2GPIO._GPIO_V2_LINE_FLAG_EVENT_CLOCK_REALTIME if edge != "none" else 0
 
             line_request.offsets[0] = self._line
             line_request.consumer = self._label
