@@ -23,12 +23,16 @@ API
 ---
 
 .. class:: periphery.GPIO(path, line, direction)
+    :noindex:
 
-    .. autoclass:: periphery.CdevGPIO
+    .. autoclass:: periphery.gpio_cdev2.Cdev2GPIO
+        :noindex:
 
 .. class:: periphery.GPIO(line, direction)
+    :noindex:
 
     .. autoclass:: periphery.SysfsGPIO
+        :noindex:
 
 .. autoclass:: periphery.GPIO
     :members:
