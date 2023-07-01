@@ -1,0 +1,2 @@
+sphinx>=2
+sphinx-rtd-theme>=1.2.0
