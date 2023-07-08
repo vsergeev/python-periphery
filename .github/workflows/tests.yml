@@ -1,0 +1,55 @@
+name: Tests
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["2.7", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "pypy2.7", "pypy3.9"]
+        include:
+          - check-types: true
+          - python-version: "2.7"
+            container: "python:2.7.18-buster"
+            check-types: false
+          - python-version: "3.5"
+            check-types: false
+          - python-version: "pypy2.7"
+            check-types: false
+
+    runs-on: ubuntu-20.04
+    container: ${{ matrix.container }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      if: ${{ matrix.python-version != '2.7' }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip
+
+    - name: Install mypy
+      if: ${{ matrix.check-types }}
+      run: python -m pip install mypy
+
+    - name: Check Types
+      if: ${{ matrix.check-types }}
+      run: mypy periphery
+
+    - name: Run tests
+      run: |
+        python -m tests.test_gpio
+        python -m tests.test_gpio_sysfs
+        python -m tests.test_spi
+        python -m tests.test_i2c
+        python -m tests.test_mmio
+        python -m tests.test_serial
+        python -m tests.test_led
+        python -m tests.test_pwm
