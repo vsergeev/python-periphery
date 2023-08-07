@@ -55,25 +55,21 @@ class MMIO(object):
 
         pagesize = os.sysconf(os.sysconf_names['SC_PAGESIZE'])
 
+        self._fd = None
         self._physaddr = physaddr
         self._size = size
         self._aligned_physaddr = physaddr - (physaddr % pagesize)
         self._aligned_size = size + (physaddr - self._aligned_physaddr)
 
         try:
-            fd = os.open(path, os.O_RDWR | os.O_SYNC)
+            self._fd = os.open(path, os.O_RDWR | os.O_SYNC)
         except OSError as e:
             raise MMIOError(e.errno, "Opening {:s}: {:s}".format(path, e.strerror))
 
         try:
-            self.mapping = mmap.mmap(fd, self._aligned_size, flags=mmap.MAP_SHARED, prot=(mmap.PROT_READ | mmap.PROT_WRITE), offset=self._aligned_physaddr)
+            self.mapping = mmap.mmap(self._fd, self._aligned_size, flags=mmap.MAP_SHARED, prot=(mmap.PROT_READ | mmap.PROT_WRITE), offset=self._aligned_physaddr)
         except OSError as e:
             raise MMIOError(e.errno, "Mapping {:s}: {:s}".format(path, e.strerror))
-
-        try:
-            os.close(fd)
-        except OSError as e:
-            raise MMIOError(e.errno, "Closing {:s}: {:s}".format(path, e.strerror))
 
     # Methods
 
@@ -278,6 +274,10 @@ class MMIO(object):
         self.mapping.close()
         self.mapping = None
 
+        try:
+            os.close(self._fd)
+        except OSError as e:
+            raise MMIOError(e.errno, "Closing {:s}: {:s}".format(path, e.strerror))
         self._fd = None
 
     # Immutable properties
