@@ -100,14 +100,15 @@ class I2C(object):
 
         Raises:
             I2CError: if an I/O or OS error occurs.
-            TypeError: if `messages` type is not list.
+            TypeError: if `messages` type is not a sequence.
             ValueError: if `messages` length is zero, or if message data is not valid bytes.
 
         """
-        if not isinstance(messages, list):
-            raise TypeError("Invalid messages type, should be list of I2C.Message.")
-        elif len(messages) == 0:
-            raise ValueError("Invalid messages data, should be non-zero length.")
+        try:
+            if len(messages) == 0:
+                raise ValueError("Invalid messages data, should be non-zero length.")
+        except TypeError:
+            raise TypeError("Invalid messages type, should be a sequence of I2C.Message.")
 
         # Convert I2C.Message messages to _CI2CMessage messages
         convert_reads = []
