@@ -110,20 +110,19 @@ class I2C(object):
             raise ValueError("Invalid messages data, should be non-zero length.")
 
         # Convert I2C.Message messages to _CI2CMessage messages
+        convert_reads = []
         cmessages = (_CI2CMessage * len(messages))()
-        for i in range(len(messages)):
-            # Convert I2C.Message data to bytes
-            if isinstance(messages[i].data, bytes):
-                data = messages[i].data
-            elif isinstance(messages[i].data, bytearray):
-                data = bytes(messages[i].data)
-            elif isinstance(messages[i].data, list):
-                data = bytes(bytearray(messages[i].data))
+        for message, cmessage in zip(messages, cmessages):
+            data = message.data
+            if not isinstance(data, bytearray):
+                data = bytearray(data)
+                if message.read:
+                    convert_reads.append((message, data))
 
-            cmessages[i].addr = address
-            cmessages[i].flags = messages[i].flags | (I2C._I2C_M_RD if messages[i].read else 0)
-            cmessages[i].len = len(data)
-            cmessages[i].buf = ctypes.cast(ctypes.create_string_buffer(data, len(data)), ctypes.POINTER(ctypes.c_ubyte))
+            cmessage.addr = address
+            cmessage.flags = message.flags | (I2C._I2C_M_RD if message.read else 0)
+            cmessage.len = n = len(data)
+            cmessage.buf = (ctypes.c_ubyte * n).from_buffer(data)
 
         # Prepare transfer structure
         i2c_xfer = _CI2CIocTransfer()
@@ -137,16 +136,12 @@ class I2C(object):
             raise I2CError(e.errno, "I2C transfer: " + e.strerror)
 
         # Update any read I2C.Message messages
-        for i in range(len(messages)):
-            if messages[i].read:
-                data = [cmessages[i].buf[j] for j in range(cmessages[i].len)]
-                # Convert read data to type used in I2C.Message messages
-                if isinstance(messages[i].data, list):
-                    messages[i].data = data
-                elif isinstance(messages[i].data, bytearray):
-                    messages[i].data = bytearray(data)
-                elif isinstance(messages[i].data, bytes):
-                    messages[i].data = bytes(bytearray(data))
+        for message, data in convert_reads:
+            # Convert read data to type used in I2C.Message messages
+            if isinstance(message.data, list):
+                message.data[:] = data
+            else:
+                message.data = bytes(data)
 
     def close(self):
         """Close the i2c-dev I2C device.
@@ -196,7 +191,8 @@ class I2C(object):
                 data (bytes, bytearray, list): a byte array or list of 8-bit
                              integers to write.
                 read (bool): specify this as a read message, where `data`
-                             serves as placeholder bytes for the read.
+                             serves as placeholder bytes for the read;
+                             if type is mutable, data is modified in-place
                 flags (int): additional i2c-dev flags for this message.
 
             Returns:
