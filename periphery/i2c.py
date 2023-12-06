@@ -188,8 +188,10 @@ class I2C(object):
             """Instantiate an I2C Message object.
 
             Args:
-                data (bytes, bytearray, list): a byte array or list of 8-bit
-                             integers to write.
+                data (bytes, bytearray, list, positive integer):
+                             a sequence of 8-bit integers to write;
+                             a number of 0x00 to write;
+                             or a number of bytes to read (result type is bytes)
                 read (bool): specify this as a read message, where `data`
                              serves as placeholder bytes for the read;
                              if type is mutable, data is modified in-place
@@ -202,8 +204,8 @@ class I2C(object):
                 TypeError: if `data`, `read`, or `flags` types are invalid.
 
             """
-            if not isinstance(data, (bytes, bytearray, list)):
-                raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
+            if not isinstance(data, (bytes, bytearray, list, int)):
+                raise TypeError("Invalid data type, should be bytes, bytearray, list or integer.")
             if not isinstance(read, bool):
                 raise TypeError("Invalid read type, should be boolean.")
             if not isinstance(flags, int):

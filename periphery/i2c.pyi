@@ -1,13 +1,15 @@
 from types import TracebackType
 
+type MessageData = bytes | bytearray | list[int] | int
+
 class I2CError(IOError): ...
 
 class I2C:
     class Message:
-        data: bytes | bytearray | list[int]
+        data: MessageData
         read: bool
         flags: int
-        def __init__(self, data: bytes | bytearray | list[int], read: bool = ..., flags: int = ...) -> None: ...
+        def __init__(self, data: MessageData, read: bool = ..., flags: int = ...) -> None: ...
 
     def __init__(self, devpath: str) -> None: ...
     def __del__(self) -> None: ...
