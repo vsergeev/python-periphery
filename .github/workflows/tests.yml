@@ -9,25 +9,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["2.7", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "pypy2.7", "pypy3.9"]
+        container: ["python:2.7-slim", "python:3.5-slim", "python:3.6-slim", "python:3.7-slim",
+                    "python:3.8-slim", "python:3.9-slim", "python:3.10-slim", "python:3.11-slim",
+                    "python:3.12-slim", "python:3.13-slim", "pypy:2.7-slim", "pypy:3.11-slim"]
         include:
-          - setup-python: true
           - check-types: true
-          - python-version: "2.7"
-            container: "python:2.7.18-slim"
-            setup-python: false
+          - container: "python:2.7-slim"
             check-types: false
-          - python-version: "3.5"
-            container: "python:3.5.10-slim"
-            setup-python: false
+          - container: "python:3.5-slim"
             check-types: false
-          - python-version: "3.6"
-            container: "python:3.6.15-slim"
-            setup-python: false
-          - python-version: "3.7"
-            container: "python:3.7.17-slim"
-            setup-python: false
-          - python-version: "pypy2.7"
+          - container: "pypy:2.7-slim"
             check-types: false
 
     runs-on: ubuntu-24.04
@@ -35,12 +26,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      if: ${{ matrix.setup-python }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
 
     - name: Upgrade pip
       run: python -m pip install --upgrade pip
@@ -55,6 +40,7 @@ jobs:
 
     - name: Run tests
       run: |
+        python --version
         python -m tests.test_gpio
         python -m tests.test_gpio_sysfs
         python -m tests.test_spi
