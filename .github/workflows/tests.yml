@@ -11,24 +11,34 @@ jobs:
       matrix:
         python-version: ["2.7", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "pypy2.7", "pypy3.9"]
         include:
+          - setup-python: true
           - check-types: true
           - python-version: "2.7"
-            container: "python:2.7.18-buster"
+            container: "python:2.7.18-slim"
+            setup-python: false
             check-types: false
           - python-version: "3.5"
+            container: "python:3.5.10-slim"
+            setup-python: false
             check-types: false
+          - python-version: "3.6"
+            container: "python:3.6.15-slim"
+            setup-python: false
+          - python-version: "3.7"
+            container: "python:3.7.17-slim"
+            setup-python: false
           - python-version: "pypy2.7"
             check-types: false
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     container: ${{ matrix.container }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      if: ${{ matrix.python-version != '2.7' }}
-      uses: actions/setup-python@v4
+      if: ${{ matrix.setup-python }}
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
