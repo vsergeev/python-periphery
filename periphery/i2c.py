@@ -76,7 +76,7 @@ class I2C(object):
         self._devpath = devpath
 
         # Query supported functions
-        buf = array.array('I', [0])
+        buf = array.array('L', [0])
         try:
             fcntl.ioctl(self._fd, I2C._I2C_IOC_FUNCS, buf, True)
         except (OSError, IOError) as e:
