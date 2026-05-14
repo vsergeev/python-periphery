@@ -20,6 +20,8 @@ jobs:
             check-types: false
           - container: "pypy:2.7-slim"
             check-types: false
+          - container: "pypy:3.11-slim"
+            check-types: false
 
     runs-on: ubuntu-24.04
     container: ${{ matrix.container }}
