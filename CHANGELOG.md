@@ -1,3 +1,9 @@
+* v2.4.2 - 09/15/2026
+    * I2C
+        * Fix buffer size for `I2C_FUNCS` `ioctl()`.
+    * Contributors
+        * Florian Larysch (@florolf) - bb7c82e
+
 * v2.4.1 - 04/21/2023
     * GPIO
         * Fix realtime timestamp reporting for line events in gpio-cdev v2
