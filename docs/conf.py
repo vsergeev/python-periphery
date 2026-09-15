@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 project = u'python-periphery'
 copyright = u'2015-2026, vsergeev / Ivan (Vanya) A. Sergeev'
 author = u'Vanya A. Sergeev'
-release = '2.4.1'
+release = '2.4.2'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -1,9 +1,9 @@
 import time
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 "Module version string."
 
-version = (2, 4, 1)
+version = (2, 4, 2)
 "Module version tuple."
 
 
