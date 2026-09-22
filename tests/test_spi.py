@@ -72,12 +72,19 @@ def test_loopback():
     passert("compare readback", buf_out == buf_in)
 
     # Try bytearray transfer
-    buf_in = bytearray(buf_in)
+    buf_in = bytearray(list(range(256)) * 4)
     buf_out = spi.transfer(buf_in)
     passert("compare readback", buf_out == buf_in)
+    passert("compare readback id", buf_out is not buf_in)
+
+    # Try bytearray transfer, reading in-place
+    buf_in = bytearray(list(range(256)) * 4)
+    buf_out = spi.transfer(buf_in, inplace=True)
+    passert("compare readback", buf_out == buf_in)
+    passert("compare readback id", buf_out is buf_in)
 
     # Try bytes transfer
-    buf_in = bytes(bytearray(buf_in))
+    buf_in = bytes(bytearray(list(range(256)) * 4))
     buf_out = spi.transfer(buf_in)
     passert("compare readback", buf_out == buf_in)
 
