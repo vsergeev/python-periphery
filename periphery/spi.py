@@ -149,11 +149,14 @@ class SPI(object):
 
     # Methods
 
-    def transfer(self, data):
+    def transfer(self, data, inplace=False):
         """Shift out `data` and return shifted in data.
 
         Args:
-            data (bytes, bytearray, list): a byte array or list of 8-bit integers to shift out.
+            data (bytes, bytearray, list): a byte array or list of 8-bit
+                integers to shift out.
+            inplace (bool): read into `data` in-place. data must be of type
+                `bytearray`.
 
         Returns:
             bytes, bytearray, list: data shifted in.
@@ -161,25 +164,19 @@ class SPI(object):
         Raises:
             SPIError: if an I/O or OS error occurs.
             TypeError: if `data` type is invalid.
-            ValueError: if data is not valid bytes.
 
         """
         if not isinstance(data, (bytes, bytearray, list)):
             raise TypeError("Invalid data type, should be bytes, bytearray, or list.")
 
-        # Create mutable array
-        try:
-            buf = array.array('B', data)
-        except OverflowError:
-            raise ValueError("Invalid data bytes.")
-
-        buf_addr, buf_len = buf.buffer_info()
+        # Convert data to bytearray (or re-use it if inplace)
+        buf = data if inplace and isinstance(data, bytearray) else bytearray(data)
 
         # Prepare transfer structure
         spi_xfer = _CSpiIocTransfer()
-        spi_xfer.tx_buf = buf_addr
-        spi_xfer.rx_buf = buf_addr
-        spi_xfer.len = buf_len
+        spi_xfer.tx_buf = ctypes.addressof((ctypes.c_ubyte * len(data)).from_buffer(buf))
+        spi_xfer.rx_buf = spi_xfer.tx_buf
+        spi_xfer.len = len(data)
 
         # Transfer
         try:
@@ -189,11 +186,11 @@ class SPI(object):
 
         # Return shifted out data with the same type as shifted in data
         if isinstance(data, bytes):
-            return bytes(bytearray(buf))
+            return bytes(buf)
         elif isinstance(data, bytearray):
-            return bytearray(buf)
+            return buf
         elif isinstance(data, list):
-            return buf.tolist()
+            return list(buf)
 
     def close(self):
         """Close the spidev SPI device.
