@@ -110,19 +110,15 @@ class I2C(object):
             raise ValueError("Invalid messages data, should be non-zero length.")
 
         # Convert I2C.Message messages to _CI2CMessage messages
-        convert_reads = []
         cmessages = (_CI2CMessage * len(messages))()
-        for message, cmessage in zip(messages, cmessages):
-            data = message.data
-            if not isinstance(data, bytearray):
-                data = bytearray(data)
-                if message.read:
-                    convert_reads.append((message, data))
+        for i in range(len(messages)):
+            # Use bytearray data type in-place
+            data = messages[i].data if isinstance(messages[i].data, bytearray) else bytearray(messages[i].data)
 
-            cmessage.addr = address
-            cmessage.flags = message.flags | (I2C._I2C_M_RD if message.read else 0)
-            cmessage.len = n = len(data)
-            cmessage.buf = (ctypes.c_ubyte * n).from_buffer(data)
+            cmessages[i].addr = address
+            cmessages[i].flags = messages[i].flags | (I2C._I2C_M_RD if messages[i].read else 0)
+            cmessages[i].len = len(data)
+            cmessages[i].buf = (ctypes.c_ubyte * len(data)).from_buffer(data)
 
         # Prepare transfer structure
         i2c_xfer = _CI2CIocTransfer()
@@ -136,12 +132,15 @@ class I2C(object):
             raise I2CError(e.errno, "I2C transfer: " + e.strerror)
 
         # Update any read I2C.Message messages
-        for message, data in convert_reads:
-            # Convert read data to type used in I2C.Message messages
-            if isinstance(message.data, list):
-                message.data[:] = data
-            else:
-                message.data = bytes(data)
+        for i in range(len(messages)):
+            if messages[i].read:
+                # Convert read data to type used in I2C.Message messages
+                if isinstance(messages[i].data, list):
+                    messages[i].data = list(cmessages[i].buf)
+                elif isinstance(messages[i].data, bytearray):
+                    pass  # Mutated in-place
+                elif isinstance(messages[i].data, bytes):
+                    messages[i].data = bytes(cmessages[i].buf)
 
     def close(self):
         """Close the i2c-dev I2C device.
