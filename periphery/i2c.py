@@ -90,39 +90,44 @@ class I2C(object):
 
     # Methods
 
-    def transfer(self, address, messages):
+    def transfer(self, address, messages, inplace=False):
         """Transfer `messages` to the specified I2C `address`. Modifies the
         `messages` array with the results of any read transactions.
 
         Args:
             address (int): I2C address.
-            messages (list): list of I2C.Message messages.
+            messages (list, tuple): list of I2C.Message messages.
+            inplace (bool): read into `messages` in-place. data must be of type
+                `bytearray`.
 
         Raises:
             I2CError: if an I/O or OS error occurs.
-            TypeError: if `messages` type is not list.
-            ValueError: if `messages` length is zero, or if message data is not valid bytes.
+            TypeError: if `messages` or message types are invalid.
+            ValueError: if `messages` length is zero.
 
         """
-        if not isinstance(messages, list):
-            raise TypeError("Invalid messages type, should be list of I2C.Message.")
+        if not isinstance(messages, (list, tuple)):
+            raise TypeError("Invalid messages type, should be list or tuple of I2C.Message.")
         elif len(messages) == 0:
-            raise ValueError("Invalid messages data, should be non-zero length.")
+            raise ValueError("Invalid messages, should contain at least one message.")
+        for message in messages:
+            if not isinstance(message, I2C.Message):
+                raise TypeError("Invalid message type, should be I2C.Message.")
 
         # Convert I2C.Message messages to _CI2CMessage messages
-        convert_reads = []
         cmessages = (_CI2CMessage * len(messages))()
-        for message, cmessage in zip(messages, cmessages):
-            data = message.data
-            if not isinstance(data, bytearray):
-                data = bytearray(data)
-                if message.read:
-                    convert_reads.append((message, data))
+        bufs = []
 
-            cmessage.addr = address
-            cmessage.flags = message.flags | (I2C._I2C_M_RD if message.read else 0)
-            cmessage.len = n = len(data)
-            cmessage.buf = (ctypes.c_ubyte * n).from_buffer(data)
+        for i in range(len(messages)):
+            # Convert data to bytearray (or re-use it if inplace)
+            buf = messages[i].data if inplace and isinstance(messages[i].data, bytearray) else bytearray(messages[i].data)
+
+            cmessages[i].addr = address
+            cmessages[i].flags = messages[i].flags | (I2C._I2C_M_RD if messages[i].read else 0)
+            cmessages[i].len = len(buf)
+            cmessages[i].buf = ctypes.cast((ctypes.c_ubyte * len(buf)).from_buffer(buf), ctypes.POINTER(ctypes.c_ubyte))
+
+            bufs.append(buf)
 
         # Prepare transfer structure
         i2c_xfer = _CI2CIocTransfer()
@@ -136,12 +141,15 @@ class I2C(object):
             raise I2CError(e.errno, "I2C transfer: " + e.strerror)
 
         # Update any read I2C.Message messages
-        for message, data in convert_reads:
-            # Convert read data to type used in I2C.Message messages
-            if isinstance(message.data, list):
-                message.data[:] = data
-            else:
-                message.data = bytes(data)
+        for i in range(len(messages)):
+            if messages[i].read:
+                # Convert read data to type used in I2C.Message messages
+                if isinstance(messages[i].data, list):
+                    messages[i].data = list(bufs[i])
+                elif isinstance(messages[i].data, bytearray):
+                    messages[i].data = bufs[i]
+                elif isinstance(messages[i].data, bytes):
+                    messages[i].data = bytes(bufs[i])
 
     def close(self):
         """Close the i2c-dev I2C device.
@@ -191,8 +199,7 @@ class I2C(object):
                 data (bytes, bytearray, list): a byte array or list of 8-bit
                              integers to write.
                 read (bool): specify this as a read message, where `data`
-                             serves as placeholder bytes for the read; if type
-                             is bytearray, data is modified in-place.
+                             serves as placeholder bytes for the read.
                 flags (int): additional i2c-dev flags for this message.
 
             Returns:
