@@ -84,6 +84,28 @@ class MMIO(object):
         if (offset + length) > self._aligned_size:
             raise ValueError("Offset out of bounds.")
 
+    def read64(self, offset):
+        """Read 64-bits from the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+
+        Returns:
+            int: 64-bit value read.
+
+        Raises:
+            TypeError: if `offset` type is invalid.
+            ValueError: if `offset` is out of bounds.
+
+        """
+        if not isinstance(offset, (int, long)):
+            raise TypeError("Invalid offset type, should be integer.")
+
+        offset = self._adjust_offset(offset)
+        self._validate_offset(offset, 8)
+        return ctypes.c_uint64.from_buffer(self.mapping, offset).value
+
     def read32(self, offset):
         """Read 32-bits from the specified `offset` in bytes, relative to the
         base physical address of the MMIO region.
@@ -172,6 +194,30 @@ class MMIO(object):
         offset = self._adjust_offset(offset)
         self._validate_offset(offset, length)
         return bytes(self.mapping[offset:offset + length])
+
+    def write64(self, offset, value):
+        """Write 64-bits to the specified `offset` in bytes, relative to the
+        base physical address of the MMIO region.
+
+        Args:
+            offset (int, long): offset from base physical address, in bytes.
+            value (int, long): 64-bit value to write.
+
+        Raises:
+            TypeError: if `offset` or `value` type are invalid.
+            ValueError: if `offset` or `value` are out of bounds.
+
+        """
+        if not isinstance(offset, (int, long)):
+            raise TypeError("Invalid offset type, should be integer.")
+        if not isinstance(value, (int, long)):
+            raise TypeError("Invalid value type, should be integer.")
+        if value < 0 or value > 0xffffffffffffffff:
+            raise ValueError("Value out of bounds.")
+
+        offset = self._adjust_offset(offset)
+        self._validate_offset(offset, 8)
+        ctypes.c_uint64.from_buffer(self.mapping, offset).value = value
 
     def write32(self, offset, value):
         """Write 32-bits to the specified `offset` in bytes, relative to the
