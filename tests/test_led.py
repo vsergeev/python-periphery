@@ -35,6 +35,13 @@ def test_open_close():
     passert("fd >= 0", led.fd >= 0)
     passert("max_brightness > 0", led.max_brightness > 0)
 
+    # Check triggers list
+    triggers = led.triggers
+    passert("triggers is a list", isinstance(triggers, list))
+    passert("triggers count > 0", len(triggers) > 0)
+    # Check each trigger entry
+    passert("each trigger is a non-empty string", all(isinstance(t, str) and t for t in triggers))
+
     # Set brightness to True, check brightness
     led.write(True)
     time.sleep(0.01)
@@ -65,6 +72,18 @@ def test_open_close():
     time.sleep(0.01)
     passert("brightness is zero", led.brightness == 0)
 
+    # Set trigger to default, check it isn't none
+    led.trigger = "default"
+    passert("trigger is not none", led.trigger != "none")
+
+    # Set trigger to none, check it is none
+    led.trigger = "none"
+    passert("trigger is none", led.trigger == "none")
+
+    # Set trigger to invalid type
+    with AssertRaises("invalid trigger type", TypeError):
+        led.trigger = 100
+
     led.close()
 
 
@@ -84,13 +103,10 @@ def test_interactive():
     print("LED description: {}".format(str(led)))
     passert("interactive success", raw_input("LED description looks ok? y/n ") == "y")
 
-    # Turn LED off
-    led.write(False)
-    passert("interactive success", raw_input("LED is off? y/n ") == "y")
-
-    # Turn LED on
-    led.write(True)
-    passert("interactive success", raw_input("LED is on? y/n ") == "y")
+    # Check triggers
+    print("LED active trigger: {}".format(led.trigger))
+    print("LED available triggers ({}): {}".format(len(led.triggers), " ".join(led.triggers)))
+    passert("interactive success", raw_input("LED triggers look OK? y/n ") == "y")
 
     # Turn LED off
     led.write(False)
@@ -99,6 +115,17 @@ def test_interactive():
     # Turn LED on
     led.write(True)
     passert("interactive success", raw_input("LED is on? y/n ") == "y")
+
+    # Turn LED off
+    led.write(False)
+    passert("interactive success", raw_input("LED is off? y/n ") == "y")
+
+    # Turn LED on
+    led.write(True)
+    passert("interactive success", raw_input("LED is on? y/n ") == "y")
+
+    # Restore default trigger
+    led.trigger = "default"
 
     led.close()
 

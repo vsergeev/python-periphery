@@ -154,6 +154,34 @@ class LED(object):
 
         self._fd = None
 
+    def _read_trigger(self):
+        """Read and parse the LED "trigger" file.
+
+        Returns:
+            (list, str or None): a list of the available triggers, and the
+            active trigger or None if no active trigger was found.
+
+        Raises:
+            LEDError: if an I/O or OS error occurs.
+
+        """
+        try:
+            with open(os.path.join(self._path, "trigger"), "r") as f_trigger:
+                content = f_trigger.read()
+        except IOError as e:
+            raise LEDError(e.errno, "Reading LED trigger: " + e.strerror)
+
+        triggers = []
+        active_trigger = None
+        for token in content.split():
+            if token.startswith("[") and token.endswith("]"):
+                active_trigger = token[1:-1]
+                triggers.append(active_trigger)
+            else:
+                triggers.append(token)
+
+        return triggers, active_trigger
+
     # Immutable properties
 
     @property
@@ -189,6 +217,21 @@ class LED(object):
         """
         return self._max_brightness
 
+    @property
+    def triggers(self):
+        """Get the LED's available triggers.
+
+        Returns:
+            list: list of available triggers.
+
+        Raises:
+            LEDError: if an I/O or OS error occurs.
+
+        :type: list
+        """
+        triggers, _ = self._read_trigger()
+        return triggers
+
     # Mutable properties
 
     def _get_brightness(self):
@@ -212,7 +255,41 @@ class LED(object):
     :type: int
     """
 
+    def _get_trigger(self):
+        _, active_trigger = self._read_trigger()
+
+        if active_trigger is None:
+            raise LEDError(None, "Active LED trigger not found.")
+
+        return active_trigger
+
+    def _set_trigger(self, trigger):
+        if not isinstance(trigger, str):
+            raise TypeError("Invalid trigger type, should be string.")
+
+        try:
+            with open(os.path.join(self._path, "trigger"), "w") as f_trigger:
+                f_trigger.write(trigger + "\n")
+        except IOError as e:
+            raise LEDError(e.errno, "Setting LED trigger: " + e.strerror)
+
+    trigger = property(_get_trigger, _set_trigger)
+    """Get or set the LED's active trigger.
+
+    Raises:
+        LEDError: if an I/O or OS error occurs, or if no active trigger is
+        found.
+        TypeError: if `trigger` type is not str.
+
+    :type: str
+    """
+
     # String representation
 
     def __str__(self):
-        return "LED {:s} (device={:s}, fd={:d}, max_brightness={:d})".format(self._name, self._path, self._fd, self._max_brightness)
+        try:
+            str_trigger = self.trigger
+        except LEDError:
+            str_trigger = "<error>"
+
+        return "LED {:s} (device={:s}, fd={:d}, max_brightness={:d}, trigger={:s})".format(self._name, self._path, self._fd, self._max_brightness, str_trigger)
