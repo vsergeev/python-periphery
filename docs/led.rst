@@ -19,6 +19,13 @@ Code Example
     # Set custom brightness level
     led1.write(led1.max_brightness / 2)
     
+    # Set trigger
+    led1.trigger = "heartbeat"
+    
+    # Query active trigger and available triggers
+    print("active trigger:", led1.trigger)
+    print("available triggers:", led1.triggers)
+    
     led0.close()
     led1.close()
 
