@@ -1,3 +1,6 @@
+* v2.4.3 - 10/05/2026
+    * Re-release with fixed wheel package.
+
 * v2.4.2 - 09/15/2026
     * I2C
         * Fix buffer size for `I2C_FUNCS` `ioctl()`.
