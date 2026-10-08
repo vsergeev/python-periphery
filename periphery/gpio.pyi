@@ -39,6 +39,7 @@ class GPIO:
     direction: property
     edge: property
     event_clock: property
+    debounce_us: property
     bias: property
     drive: property
     inverted: property
@@ -55,6 +56,7 @@ class CdevGPIO(GPIO):
         inverted: bool = ...,
         label: str | None = ...,
         event_clock: str = ...,
+        debounce_us: int = ...,
     ) -> None: ...
     def __new__(self, path: str, line: int | str, direction: str, **kwargs: Any) -> CdevGPIO: ...  # noqa: Y034
 

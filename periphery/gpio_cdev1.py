@@ -518,6 +518,19 @@ class Cdev1GPIO(GPIO):
 
     event_clock = property(_get_event_clock, _set_event_clock)
 
+    def _get_debounce_us(self):
+        return 0
+
+    def _set_debounce_us(self, debounce_us):
+        if not isinstance(debounce_us, int):
+            raise TypeError("Invalid debounce_us type, should be integer.")
+        if debounce_us < 0:
+            raise ValueError("Invalid debounce_us value, should be zero or positive.")
+
+        raise GPIOError(None, "Kernel version does not support configuring debounce")
+
+    debounce_us = property(_get_debounce_us, _set_debounce_us)
+
     def _get_bias(self):
         return self._bias
 
