@@ -102,6 +102,9 @@ def test_open_close():
     # Attempt to set event clock on output GPIO
     with AssertRaises("set event clock on output GPIO", periphery.GPIOError):
         gpio.event_clock = "hte"
+    # Attempt to set debounce on output GPIO
+    with AssertRaises("set debounce on output GPIO", periphery.GPIOError):
+        gpio.debounce_us = 10
     # Attempt to read event on output GPIO
     with AssertRaises("read event on output GPIO", periphery.GPIOError):
         gpio.read_event()
@@ -130,6 +133,13 @@ def test_open_close():
     gpio.event_clock = "monotonic"
     passert("event clock is monotonic", gpio.event_clock == "monotonic")
 
+    # Set debounce, check debounce
+    gpio.debounce_us = 10
+    passert("debounce us is 10", gpio.debounce_us == 10)
+    # Disable debounce, check debounce
+    gpio.debounce_us = 0
+    passert("debounce us is 0", gpio.debounce_us == 0)
+
     # Set bias pull up, check bias pull up
     gpio.bias = "pull_up"
     passert("bias is pull up", gpio.bias == "pull_up")
@@ -146,6 +156,9 @@ def test_open_close():
     # Attempt to set drive on input GPIO
     with AssertRaises("set drive on input GPIO", periphery.GPIOError):
         gpio.drive = "open_drain"
+    # Attempt to set negative debounce on input GPIO
+    with AssertRaises("set negative debounce on input GPIO", periphery.GPIOError):
+        gpio.debounce_us = -1
 
     gpio.close()
 
