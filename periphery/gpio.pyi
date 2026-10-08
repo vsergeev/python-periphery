@@ -38,6 +38,7 @@ class GPIO:
     def chip_label(self) -> str: ...
     direction: property
     edge: property
+    event_clock: property
     bias: property
     drive: property
     inverted: property
@@ -49,6 +50,7 @@ class CdevGPIO(GPIO):
         line: int | str,
         direction: str,
         edge: str = ...,
+        event_clock: str = ...,
         bias: str = ...,
         drive: str = ...,
         inverted: bool = ...,

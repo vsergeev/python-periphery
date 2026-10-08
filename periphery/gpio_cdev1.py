@@ -504,6 +504,20 @@ class Cdev1GPIO(GPIO):
 
     edge = property(_get_edge, _set_edge)
 
+    def _get_event_clock(self):
+        return "realtime"
+
+    def _set_event_clock(self, event_clock):
+        if not isinstance(event_clock, str):
+            raise TypeError("Invalid event_clock type, should be string.")
+        if event_clock not in ["realtime", "monotonic", "hte"]:
+            raise ValueError("Invalid event_clock, can be: \"realtime\", \"monotonic\", \"hte\".")
+
+        if event_clock != "realtime":
+            raise GPIOError(None, "Kernel version does not support configuring event clock")
+
+    event_clock = property(_get_event_clock, _set_event_clock)
+
     def _get_bias(self):
         return self._bias
 
