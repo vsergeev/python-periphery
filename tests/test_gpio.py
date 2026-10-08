@@ -56,6 +56,9 @@ def test_open_close():
     # Set invalid edge
     with AssertRaises("set invalid edge", ValueError):
         gpio.edge = "blah"
+    # Set invalid event clock
+    with AssertRaises("set invalid event clock", ValueError):
+        gpio.event_clock = "blah"
     # Set invalid bias
     with AssertRaises("set invalid bias", ValueError):
         gpio.bias = "blah"
@@ -96,6 +99,9 @@ def test_open_close():
     # Attempt to set interrupt edge on output GPIO
     with AssertRaises("set interrupt edge on output GPIO", periphery.GPIOError):
         gpio.edge = "rising"
+    # Attempt to set event clock on output GPIO
+    with AssertRaises("set event clock on output GPIO", periphery.GPIOError):
+        gpio.event_clock = "hte"
     # Attempt to read event on output GPIO
     with AssertRaises("read event on output GPIO", periphery.GPIOError):
         gpio.read_event()
@@ -116,9 +122,13 @@ def test_open_close():
     # Set edge both, check edge both
     gpio.edge = "both"
     passert("edge is both", gpio.edge == "both")
-    # Set edge none, check edge none
-    gpio.edge = "none"
-    passert("edge is none", gpio.edge == "none")
+
+    # Set event clock realtime, check event clock realtime
+    gpio.event_clock = "realtime"
+    passert("event clock is realtime", gpio.event_clock == "realtime")
+    # Set event clock monotonic, check event clock monotonic
+    gpio.event_clock = "monotonic"
+    passert("event clock is monotonic", gpio.event_clock == "monotonic")
 
     # Set bias pull up, check bias pull up
     gpio.bias = "pull_up"
@@ -286,28 +296,53 @@ def test_loopback():
 def test_interactive():
     print("Starting interactive test...")
 
-    gpio = periphery.GPIO(path, line_output, "out")
+    gpio_out = periphery.GPIO(path, line_output, "out")
 
     print("Starting interactive test. Get out your multimeter, buddy!")
     raw_input("Press enter to continue...")
 
     # Check tostring
-    print("GPIO description: {}".format(str(gpio)))
+    print("GPIO description: {}".format(str(gpio_out)))
     passert("interactive success", raw_input("GPIO description looks ok? y/n ") == "y")
 
     # Drive GPIO out low
-    gpio.write(False)
+    gpio_out.write(False)
     passert("interactive success", raw_input("GPIO out is low? y/n ") == "y")
 
     # Drive GPIO out high
-    gpio.write(True)
+    gpio_out.write(True)
     passert("interactive success", raw_input("GPIO out is high? y/n ") == "y")
 
     # Drive GPIO out low
-    gpio.write(False)
+    gpio_out.write(False)
     passert("interactive success", raw_input("GPIO out is low? y/n ") == "y")
 
-    gpio.close()
+    # Open input pin
+    gpio_in = periphery.GPIO(path, line_input, "in")
+
+    # Set both edge and realtime event clock
+    gpio_in.edge = "both"
+    gpio_in.event_clock = "realtime"
+
+    # Read line event with realtime event clock
+    print("Driving GPIO out high and reading GPIO in line event...")
+    gpio_out.write(True)
+    event = gpio_in.read_event()
+    passert("event edge is rising", event.edge == "rising")
+    passert("interactive success", raw_input("Line event timestamp {:d} is realtime? y/n ".format(event.timestamp)) == "y")
+
+    # Set monotonic event clock
+    gpio_in.event_clock = "monotonic"
+
+    # Read line event with monotonic event clock
+    print("Driving GPIO out low and reading GPIO in line event...")
+    gpio_out.write(False)
+    event = gpio_in.read_event()
+    passert("event edge is falling", event.edge == "falling")
+    passert("interactive success", raw_input("Line event timestamp {:d} is monotonic? y/n ".format(event.timestamp)) == "y")
+
+    gpio_in.close()
+    gpio_out.close()
 
 
 if __name__ == "__main__":

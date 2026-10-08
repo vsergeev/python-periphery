@@ -295,6 +295,26 @@ class GPIO(object):
     :type: str
     """
 
+    def _get_event_clock(self):
+        raise NotImplementedError()
+
+    def _set_event_clock(self, event_clock):
+        raise NotImplementedError()
+
+    event_clock = property(_get_event_clock, _set_event_clock)
+    """Get or set the GPIO's event clock. Can be "realtime", "monotonic",
+    "hte".
+
+    This property is not supported by sysfs GPIOs.
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `event_clock` type is not str.
+        ValueError: if `event_clock` value is invalid.
+
+    :type: str
+    """
+
     def _get_bias(self):
         raise NotImplementedError()
 

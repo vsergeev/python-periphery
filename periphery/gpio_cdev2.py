@@ -122,10 +122,13 @@ class Cdev2GPIO(GPIO):
     _GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN = 0x200
     _GPIO_V2_LINE_FLAG_BIAS_DISABLED = 0x400
     _GPIO_V2_LINE_FLAG_EVENT_CLOCK_REALTIME = 0x800
+    _GPIO_V2_LINE_FLAG_EVENT_CLOCK_HTE = 0x1000
 
     SUPPORTED = KERNEL_VERSION >= (5, 10)
 
-    def __init__(self, path, line, direction, edge="none", bias="default", drive="default", inverted=False, label=None):
+    _SUPPORTS_EVENT_CLOCK_HTE = KERNEL_VERSION >= (5, 19)
+
+    def __init__(self, path, line, direction, edge="none", event_clock="realtime", bias="default", drive="default", inverted=False, label=None):
         """**Character device GPIO (ABI version 2)**
 
         Instantiate a GPIO object and open the character device GPIO with the
@@ -140,6 +143,8 @@ class Cdev2GPIO(GPIO):
                              "low".
             edge (str): GPIO interrupt edge, can be "none", "rising",
                         "falling", or "both".
+            event_clock (str): GPIO event clock, can be "realtime",
+                        "monotonic", or "hte".
             bias (str): GPIO line bias, can be "default", "pull_up",
                         "pull_down", or "disable".
             drive (str): GPIO line drive, can be "default", "open_drain", or
@@ -152,10 +157,11 @@ class Cdev2GPIO(GPIO):
 
         Raises:
             GPIOError: if an I/O or OS error occurs.
-            TypeError: if `path`, `line`, `direction`, `edge`, `bias`, `drive`,
-                       `inverted`, or `label` types are invalid.
-            ValueError: if `direction`, `edge`, `bias`, or `drive` value is
-                        invalid.
+            TypeError: if `path`, `line`, `direction`, `edge`, `event_clock`,
+                       `bias`, `drive`, `inverted`, or `label` types are
+                       invalid.
+            ValueError: if `direction`, `edge`, `event_clock`, `bias`, or
+                        `drive` value is invalid.
             LookupError: if the GPIO line was not found by the provided name.
 
         """
@@ -165,17 +171,18 @@ class Cdev2GPIO(GPIO):
         self._chip_fd = None
         self._direction = None
         self._edge = None
+        self._event_clock = None
         self._bias = None
         self._drive = None
         self._inverted = None
         self._label = None
 
-        self._open(path, line, direction, edge, bias, drive, inverted, label)
+        self._open(path, line, direction, edge, event_clock, bias, drive, inverted, label)
 
     def __new__(self, path, line, direction, **kwargs):
         return object.__new__(Cdev2GPIO)
 
-    def _open(self, path, line, direction, edge, bias, drive, inverted, label):
+    def _open(self, path, line, direction, edge, event_clock, bias, drive, inverted, label):
         if not isinstance(path, str):
             raise TypeError("Invalid path type, should be string.")
 
@@ -191,6 +198,11 @@ class Cdev2GPIO(GPIO):
             raise TypeError("Invalid edge type, should be string.")
         elif edge not in ["none", "rising", "falling", "both"]:
             raise ValueError("Invalid edge, can be: \"none\", \"rising\", \"falling\", \"both\".")
+
+        if not isinstance(event_clock, str):
+            raise TypeError("Invalid event_clock type, should be string.")
+        elif event_clock not in ["realtime", "monotonic", "hte"]:
+            raise ValueError("Invalid event_clock, can be: \"realtime\", \"monotonic\", \"hte\".")
 
         if not isinstance(bias, str):
             raise TypeError("Invalid bias type, should be string.")
@@ -221,10 +233,13 @@ class Cdev2GPIO(GPIO):
         self._line = line
         self._label = label.encode() if label is not None else b"periphery"
 
-        self._reopen(direction, edge, bias, drive, inverted)
+        self._reopen(direction, edge, event_clock, bias, drive, inverted)
 
-    def _reopen(self, direction, edge, bias, drive, inverted):
+    def _reopen(self, direction, edge, event_clock, bias, drive, inverted):
         flags = 0
+
+        if event_clock == "hte" and not Cdev2GPIO._SUPPORTS_EVENT_CLOCK_HTE:
+            raise GPIOError(None, "Kernel version does not support GPIO event clock HTE")
 
         if bias == "pull_up":
             flags |= Cdev2GPIO._GPIO_V2_LINE_FLAG_BIAS_PULL_UP
@@ -258,7 +273,7 @@ class Cdev2GPIO(GPIO):
 
         if direction == "in":
             flags |= Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_RISING if edge == "rising" else Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_FALLING if edge == "falling" else (Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_RISING | Cdev2GPIO._GPIO_V2_LINE_FLAG_EDGE_FALLING) if edge == "both" else 0
-            flags |= Cdev2GPIO._GPIO_V2_LINE_FLAG_EVENT_CLOCK_REALTIME if edge != "none" else 0
+            flags |= (Cdev2GPIO._GPIO_V2_LINE_FLAG_EVENT_CLOCK_REALTIME if event_clock == "realtime" else Cdev2GPIO._GPIO_V2_LINE_FLAG_EVENT_CLOCK_HTE if event_clock == "hte" else 0) if edge != "none" else 0
 
             line_request.offsets[0] = self._line
             line_request.consumer = self._label
@@ -291,6 +306,7 @@ class Cdev2GPIO(GPIO):
 
         self._direction = "in" if direction == "in" else "out"
         self._edge = edge
+        self._event_clock = event_clock
         self._bias = bias
         self._drive = drive
         self._inverted = inverted
@@ -503,7 +519,7 @@ class Cdev2GPIO(GPIO):
         if self._direction == direction:
             return
 
-        self._reopen(direction, "none", self._bias, self._drive, self._inverted)
+        self._reopen(direction, "none", self._event_clock, self._bias, self._drive, self._inverted)
 
     direction = property(_get_direction, _set_direction)
 
@@ -522,9 +538,28 @@ class Cdev2GPIO(GPIO):
         if self._edge == edge:
             return
 
-        self._reopen(self._direction, edge, self._bias, self._drive, self._inverted)
+        self._reopen(self._direction, edge, self._event_clock, self._bias, self._drive, self._inverted)
 
     edge = property(_get_edge, _set_edge)
+
+    def _get_event_clock(self):
+        return self._event_clock
+
+    def _set_event_clock(self, event_clock):
+        if not isinstance(event_clock, str):
+            raise TypeError("Invalid event_clock type, should be string.")
+        if event_clock not in ["realtime", "monotonic", "hte"]:
+            raise ValueError("Invalid event_clock, can be: \"realtime\", \"monotonic\", \"hte\".")
+
+        if self._direction != "in":
+            raise GPIOError(None, "Invalid operation: cannot set event clock on output GPIO")
+
+        if self._event_clock == event_clock:
+            return
+
+        self._reopen(self._direction, self._edge, event_clock, self._bias, self._drive, self._inverted)
+
+    event_clock = property(_get_event_clock, _set_event_clock)
 
     def _get_bias(self):
         return self._bias
@@ -538,7 +573,7 @@ class Cdev2GPIO(GPIO):
         if self._bias == bias:
             return
 
-        self._reopen(self._direction, self._edge, bias, self._drive, self._inverted)
+        self._reopen(self._direction, self._edge, self._event_clock, bias, self._drive, self._inverted)
 
     bias = property(_get_bias, _set_bias)
 
@@ -557,7 +592,7 @@ class Cdev2GPIO(GPIO):
         if self._drive == drive:
             return
 
-        self._reopen(self._direction, self._edge, self._bias, drive, self._inverted)
+        self._reopen(self._direction, self._edge, self._event_clock, self._bias, drive, self._inverted)
 
     drive = property(_get_drive, _set_drive)
 
@@ -571,7 +606,7 @@ class Cdev2GPIO(GPIO):
         if self._inverted == inverted:
             return
 
-        self._reopen(self._direction, self._edge, self._bias, self._drive, inverted)
+        self._reopen(self._direction, self._edge, self._event_clock, self._bias, self._drive, inverted)
 
     inverted = property(_get_inverted, _set_inverted)
 
@@ -599,6 +634,11 @@ class Cdev2GPIO(GPIO):
             str_edge = "<error>"
 
         try:
+            str_event_clock = self.event_clock
+        except GPIOError:
+            str_event_clock = "<error>"
+
+        try:
             str_bias = self.bias
         except GPIOError:
             str_bias = "<error>"
@@ -623,5 +663,5 @@ class Cdev2GPIO(GPIO):
         except GPIOError:
             str_chip_label = "<error>"
 
-        return "GPIO {:d} (name=\"{:s}\", label=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, bias={:s}, drive={:s}, inverted={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
-            .format(self._line, str_name, str_label, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_bias, str_drive, str_inverted, str_chip_name, str_chip_label)
+        return "GPIO {:d} (name=\"{:s}\", label=\"{:s}\", device={:s}, line_fd={:d}, chip_fd={:d}, direction={:s}, edge={:s}, event_clock={:s}, bias={:s}, drive={:s}, inverted={:s}, chip_name=\"{:s}\", chip_label=\"{:s}\", type=cdev)" \
+            .format(self._line, str_name, str_label, self._devpath, self._line_fd, self._chip_fd, str_direction, str_edge, str_event_clock, str_bias, str_drive, str_inverted, str_chip_name, str_chip_label)
