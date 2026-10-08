@@ -296,6 +296,14 @@ class SysfsGPIO(GPIO):
 
     edge = property(_get_edge, _set_edge)
 
+    def _get_event_clock(self):
+        raise NotImplementedError("Sysfs GPIO does not support event clock property.")
+
+    def _set_event_clock(self, event_clock):
+        raise NotImplementedError("Sysfs GPIO does not support event clock property.")
+
+    event_clock = property(_get_event_clock, _set_event_clock)
+
     def _get_bias(self):
         raise NotImplementedError("Sysfs GPIO does not support line bias property.")
 

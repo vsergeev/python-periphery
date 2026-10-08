@@ -38,6 +38,7 @@ class GPIO:
     def chip_label(self) -> str: ...
     direction: property
     edge: property
+    event_clock: property
     bias: property
     drive: property
     inverted: property
@@ -53,6 +54,7 @@ class CdevGPIO(GPIO):
         drive: str = ...,
         inverted: bool = ...,
         label: str | None = ...,
+        event_clock: str = ...,
     ) -> None: ...
     def __new__(self, path: str, line: int | str, direction: str, **kwargs: Any) -> CdevGPIO: ...  # noqa: Y034
 
