@@ -39,6 +39,7 @@ class GPIO:
     direction: property
     edge: property
     event_clock: property
+    debounce_us: property
     bias: property
     drive: property
     inverted: property

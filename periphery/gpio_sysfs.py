@@ -304,6 +304,14 @@ class SysfsGPIO(GPIO):
 
     event_clock = property(_get_event_clock, _set_event_clock)
 
+    def _get_debounce_us(self):
+        raise NotImplementedError("Sysfs GPIO does not support debounce property.")
+
+    def _set_debounce_us(self, debounce_us):
+        raise NotImplementedError("Sysfs GPIO does not support debounce property.")
+
+    debounce_us = property(_get_debounce_us, _set_debounce_us)
+
     def _get_bias(self):
         raise NotImplementedError("Sysfs GPIO does not support line bias property.")
 

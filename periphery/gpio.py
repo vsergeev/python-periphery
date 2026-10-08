@@ -315,6 +315,25 @@ class GPIO(object):
     :type: str
     """
 
+    def _get_debounce_us(self):
+        raise NotImplementedError()
+
+    def _set_debounce_us(self, debounce_us):
+        raise NotImplementedError()
+
+    debounce_us = property(_get_debounce_us, _set_debounce_us)
+    """Get or set the GPIO's debounce period in microseconds.
+
+    This property is not supported by sysfs GPIOs, nor by ABI version 1
+    character device GPIOs.
+
+    Raises:
+        GPIOError: if an I/O or OS error occurs.
+        TypeError: if `debounce_us` type is not int.
+
+    :type: int
+    """
+
     def _get_bias(self):
         raise NotImplementedError()
 
