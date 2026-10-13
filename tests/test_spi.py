@@ -88,6 +88,34 @@ def test_loopback():
     buf_out = spi.transfer(buf_in)
     passert("compare readback", buf_out == buf_in)
 
+    # Try multiple transfer
+    buf1 = bytearray(range(32))
+    buf2 = bytearray(range(32))
+    msgs = [periphery.SPI.Message(buf1), periphery.SPI.Message(buf2)]
+    spi.transfer_advanced(msgs)
+    passert("compare readback 1", msgs[0].data == bytearray(range(32)))
+    passert("compare readback 2", msgs[1].data == bytearray(range(32)))
+    passert("compare readback 1 id", msgs[0].data is not buf1)
+    passert("compare readback 2 id", msgs[1].data is not buf2)
+
+    # Try multiple transfer, reading in-place
+    buf1 = bytearray(range(32))
+    buf2 = bytearray(range(32))
+    msgs = [periphery.SPI.Message(buf1), periphery.SPI.Message(buf2)]
+    spi.transfer_advanced(msgs, inplace=True)
+    passert("compare readback 1", msgs[0].data == bytearray(range(32)))
+    passert("compare readback 2", msgs[1].data == bytearray(range(32)))
+    passert("compare readback 1 id", msgs[0].data is buf1)
+    passert("compare readback 2 id", msgs[1].data is buf2)
+
+    # Try multiple transfer of two messages with deselect, one with list data,
+    # one with bytes data
+    msgs = [periphery.SPI.Message(list(range(32)), deselect=True),
+            periphery.SPI.Message(bytes(bytearray(range(32))))]
+    spi.transfer_advanced(msgs)
+    passert("compare readback 1", msgs[0].data == list(range(32)))
+    passert("compare readback 2", msgs[1].data == bytes(bytearray(range(32))))
+
     spi.close()
 
 
@@ -131,6 +159,15 @@ def test_interactive():
     passert("interactive success", raw_input("SPI transfer speed <= 100KHz, mode 3 occurred? y/n ") == "y")
 
     spi.mode = 0
+
+    # Multiple transfer
+    msgs = [periphery.SPI.Message(bytearray([0x55, 0xaa, 0x0f, 0xf0]), deselect=True),
+            periphery.SPI.Message(b"\x55\xaa\x0f\xf0"),
+            periphery.SPI.Message([0x55, 0xaa, 0x0f, 0xf0])]
+    raw_input("Press enter to start transfer...")
+    spi.transfer_advanced(msgs)
+    print("SPI data 0x55, 0xaa, 0x0f, 0xf0")
+    passert("interactive success", raw_input("SPI transfer of three messages, with deselect after first message occurred? y/n ") == "y")
 
     # 500KHz transfer
     spi.max_speed = 500000

@@ -27,7 +27,8 @@ class _CSpiIocTransfer(ctypes.Structure):
         ('cs_change', ctypes.c_ubyte),
         ('tx_nbits', ctypes.c_ubyte),
         ('rx_nbits', ctypes.c_ubyte),
-        ('pad', ctypes.c_ushort),
+        ('word_delay_usecs', ctypes.c_ubyte),
+        ('pad', ctypes.c_ubyte),
     ]
 
 
@@ -45,8 +46,10 @@ class SPI(object):
     _SPI_IOC_WR_BITS_PER_WORD = 0x40016b03
     _SPI_IOC_RD_BITS_PER_WORD = 0x80016b03
     _SPI_IOC_MESSAGE_1 = 0x40206b00
+    _SPI_IOC_MAGIC = 0x6b
 
     _SUPPORTS_MODE32 = KERNEL_VERSION >= (3, 15)
+    _SUPPORTS_WORD_DELAY = KERNEL_VERSION >= (5, 2)
 
     def __init__(self, devpath, mode, max_speed, bit_order="msb", bits_per_word=8, extra_flags=0):
         """Instantiate a SPI object and open the spidev device at the specified
@@ -191,6 +194,85 @@ class SPI(object):
             return buf
         elif isinstance(data, list):
             return list(buf)
+
+    def transfer_advanced(self, messages, inplace=False):
+        """Transfer multiple messages, shifting out `data` of each message,
+        while shifting the same length in, modifying the `messages` list with
+        the shifted in data of each message. If `deselect` is true, deselect
+        the device before reselecting it for the following transfer.
+
+        `deselect_delay_us` specifies a delay in microseconds before
+        deselection when `deselect` is true. `word_delay_us` specifies a delay
+        in microseconds between words within a message. Note that
+        `deselect_delay_us` and `word_delay_us` may not be supported by all SPI
+        controllers and may be silently ignored.
+
+        Args:
+            messages (list, tuple): list of SPI.Message messages to transfer.
+            inplace (bool): read into `messages` in-place. data must be of type
+                `bytearray`.
+
+        Raises:
+            SPIError: if an I/O or OS error occurs.
+            TypeError: if `messages` or message types are invalid.
+            ValueError: if `messages` length is zero.
+
+        """
+        if not isinstance(messages, (list, tuple)):
+            raise TypeError("Invalid messages type, should be list or tuple of SPI.Message.")
+        elif len(messages) == 0:
+            raise ValueError("Invalid messages, should contain at least one message.")
+        for message in messages:
+            if not isinstance(message, SPI.Message):
+                raise TypeError("Invalid message type, should be SPI.Message.")
+
+        # Prepare transfer structures
+        spi_xfer = (_CSpiIocTransfer * len(messages))()
+        bufs = []
+
+        for i, message in enumerate(messages):
+            # Validate message
+            if not isinstance(message.data, (bytes, bytearray, list)):
+                raise TypeError("Invalid data type in message {:d}, should be bytes, bytearray, or list.".format(i))
+            if not isinstance(message.deselect, bool):
+                raise TypeError("Invalid deselect type in message {:d}, should be bool.".format(i))
+            if not isinstance(message.deselect_delay_us, int):
+                raise TypeError("Invalid deselect_delay_us type in message {:d}, should be integer.".format(i))
+            if not isinstance(message.word_delay_us, int):
+                raise TypeError("Invalid word_delay_us type in message {:d}, should be integer.".format(i))
+
+            # Convert data to bytearray (or re-use it if inplace)
+            buf = message.data if inplace and isinstance(message.data, bytearray) else bytearray(message.data)
+
+            spi_xfer[i].tx_buf = ctypes.addressof((ctypes.c_ubyte * len(buf)).from_buffer(buf))
+            spi_xfer[i].rx_buf = spi_xfer[i].tx_buf
+            spi_xfer[i].len = len(buf)
+            spi_xfer[i].delay_usecs = message.deselect_delay_us
+            spi_xfer[i].cs_change = int(message.deselect)
+            if SPI._SUPPORTS_WORD_DELAY:
+                spi_xfer[i].word_delay_usecs = message.word_delay_us
+
+            bufs.append(buf)
+
+        # Prepare the SPI_IOC_MESSAGE ioctl number for message count:
+        #   _IOW(SPI_IOC_MAGIC, 0, struct spi_ioc_transfer[count])
+        spi_ioc_message = (1 << 30) | ((ctypes.sizeof(_CSpiIocTransfer) * len(messages)) << 16) | (SPI._SPI_IOC_MAGIC << 8) | 0x0
+
+        # Transfer
+        try:
+            fcntl.ioctl(self._fd, spi_ioc_message, spi_xfer)
+        except (OSError, IOError) as e:
+            raise SPIError(e.errno, "SPI transfer: " + e.strerror)
+
+        # Update SPI.Message data with the shifted in data
+        for i in range(len(messages)):
+            # Convert shifted in data to type used in SPI.Message messages
+            if isinstance(messages[i].data, list):
+                messages[i].data = list(bufs[i])
+            elif isinstance(messages[i].data, bytearray):
+                messages[i].data = bufs[i]
+            elif isinstance(messages[i].data, bytes):
+                messages[i].data = bytes(bufs[i])
 
     def close(self):
         """Close the spidev SPI device.
@@ -450,3 +532,26 @@ class SPI(object):
     def __str__(self):
         return "SPI (device={:s}, fd={:d}, mode={:d}, max_speed={:d}, bit_order={:s}, bits_per_word={:d}, extra_flags=0x{:08x})" \
             .format(self.devpath, self.fd, self.mode, self.max_speed, self.bit_order, self.bits_per_word, self.extra_flags)
+
+    class Message:
+        def __init__(self, data, deselect=False, deselect_delay_us=0, word_delay_us=0):
+            """Instantiate an SPI Message object.
+
+            Args:
+                data (bytes, bytearray, list): a byte array or list of 8-bit
+                    integers to shift out.
+                deselect (bool): deselect the device before reselecting it for
+                    the following transfer.
+                deselect_delay_us (int): delay in microseconds before
+                    deselection when `deselect` is true.
+                word_delay_us (int): delay in microseconds between words within
+                    the transfer.
+
+            Returns:
+                Message: Message object.
+
+            """
+            self.data = data
+            self.deselect = deselect
+            self.deselect_delay_us = deselect_delay_us
+            self.word_delay_us = word_delay_us
