@@ -1,3 +1,23 @@
+* v2.5.0 - 10/29/2026
+    * I2C
+        * Add support for reading in-place to `transfer()`.
+    * SPI
+        * Add support for reading in-place to `transfer()`.
+        * Add `transfer_advanced()` method for transferring multiple messages,
+          with optional deselect between messages, deselect delay, and word
+          delay.
+    * MMIO
+        * Add `read64()` and `write64()` methods.
+    * GPIO
+        * Add `event_clock` property.
+        * Add `debounce_us` property.
+    * Serial
+        * Fix blocking `poll()` for `timeout=None`.
+    * LED
+        * Add `trigger` and `triggers` properties.
+    * Contributors
+        * Julien Muchembled (@jmuchemb) - 203c22c
+
 * v2.4.3 - 10/05/2026
     * Re-release with fixed wheel package.
 
