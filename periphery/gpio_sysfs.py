@@ -83,7 +83,7 @@ class SysfsGPIO(GPIO):
                     with open(os.path.join(gpio_path, "direction"), 'w'):
                         break
                 except IOError as e:
-                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == SysfsGPIO._GPIO_STAT_RETRIES - 1):
+                    if e.errno != errno.EACCES or i == SysfsGPIO._GPIO_STAT_RETRIES - 1:
                         raise GPIOError(e.errno, "Opening GPIO direction: " + e.strerror)
 
                 time.sleep(SysfsGPIO._GPIO_STAT_DELAY)
