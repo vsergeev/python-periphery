@@ -168,8 +168,6 @@ class Serial(object):
         except termios.error as e:
             raise SerialError(e.errno, "Setting serial port attributes: " + e.strerror)
 
-        self._use_termios_timeout = False
-
     # Methods
 
     def read(self, length, timeout=None):
