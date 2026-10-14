@@ -593,30 +593,11 @@ class Cdev1GPIO(GPIO):
         except GPIOError:
             str_label = "<error>"
 
-        try:
-            str_direction = self.direction
-        except GPIOError:
-            str_direction = "<error>"
-
-        try:
-            str_edge = self.edge
-        except GPIOError:
-            str_edge = "<error>"
-
-        try:
-            str_bias = self.bias
-        except GPIOError:
-            str_bias = "<error>"
-
-        try:
-            str_drive = self.drive
-        except GPIOError:
-            str_drive = "<error>"
-
-        try:
-            str_inverted = str(self.inverted)
-        except GPIOError:
-            str_inverted = "<error>"
+        str_direction = self._direction
+        str_edge = self._edge
+        str_bias = self._bias
+        str_drive = self._drive
+        str_inverted = str(self._inverted)
 
         try:
             str_chip_name = self.chip_name
