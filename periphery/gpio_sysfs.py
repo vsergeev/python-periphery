@@ -345,7 +345,7 @@ class SysfsGPIO(GPIO):
 
     def _set_inverted(self, inverted):
         if not isinstance(inverted, bool):
-            raise TypeError("Invalid drive type, should be bool.")
+            raise TypeError("Invalid inverted type, should be bool.")
 
         # Write active_low
         try:
