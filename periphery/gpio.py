@@ -9,14 +9,12 @@ class GPIOError(IOError):
 
 
 class EdgeEvent(collections.namedtuple('EdgeEvent', ['edge', 'timestamp'])):
-    def __new__(cls, edge, timestamp):
-        """EdgeEvent containing the event edge and event time reported by Linux.
+    """EdgeEvent containing the event edge and event time reported by Linux.
 
-        Args:
-            edge (str): event edge, either "rising" or "falling".
-            timestamp (int): event time in nanoseconds.
-        """
-        return super(EdgeEvent, cls).__new__(cls, edge, timestamp)
+    Attributes:
+        edge (str): event edge, either "rising" or "falling".
+        timestamp (int): event time in nanoseconds.
+    """
 
 
 class GPIO(object):
