@@ -223,7 +223,7 @@ class Cdev2GPIO(GPIO):
             raise ValueError("Invalid drive, can be: \"default\", \"open_drain\", \"open_source\".")
 
         if not isinstance(inverted, bool):
-            raise TypeError("Invalid drive type, should be bool.")
+            raise TypeError("Invalid inverted type, should be bool.")
 
         if not isinstance(label, (type(None), str)):
             raise TypeError("Invalid label type, should be None or str.")
@@ -635,7 +635,7 @@ class Cdev2GPIO(GPIO):
 
     def _set_inverted(self, inverted):
         if not isinstance(inverted, bool):
-            raise TypeError("Invalid drive type, should be bool.")
+            raise TypeError("Invalid inverted type, should be bool.")
 
         if self._inverted == inverted:
             return
