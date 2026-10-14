@@ -268,7 +268,7 @@ class Serial(object):
         """
         p = select.poll()
         p.register(self._fd, select.POLLIN | select.POLLPRI)
-        events = p.poll(int(timeout * 1000))
+        events = p.poll(int(timeout * 1000) if timeout is not None else None)
 
         if len(events) > 0:
             return True
