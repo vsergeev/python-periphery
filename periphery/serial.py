@@ -315,7 +315,7 @@ class Serial(object):
             SerialError: if an I/O or OS error occurs.
 
         """
-        # Get input waiting
+        # Get output waiting
         buf = array.array('I', [0])
         try:
             fcntl.ioctl(self._fd, termios.TIOCOUTQ, buf, True)
