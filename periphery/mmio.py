@@ -324,8 +324,6 @@ class MMIO(object):
         self.mapping.close()
         self.mapping = None
 
-        self._fd = None
-
     # Immutable properties
 
     @property
