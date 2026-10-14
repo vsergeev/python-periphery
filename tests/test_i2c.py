@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import periphery
 from .test import ptest, pokay, passert, AssertRaises
@@ -9,6 +10,7 @@ if sys.version_info[0] == 3:
 
 
 i2c_devpath = None
+i2c_eeprom_addr = None
 
 
 def test_arguments():
@@ -36,7 +38,47 @@ def test_open_close():
 
 def test_loopback():
     ptest()
-    # No general way to do a loopback test for I2C without a real component, skipping...
+
+    # Assumes a 24Cxx style I2C EEPROM is on the bus at i2c_eeprom_addr.
+
+    data_pattern = bytearray(range(32))
+
+    i2c = periphery.I2C(i2c_devpath)
+
+    # Burst write the whole pattern to the EEPROM
+    msgs = [periphery.I2C.Message([0x00, 0x00] + list(data_pattern))]
+    i2c.transfer(i2c_eeprom_addr, msgs)
+
+    # Wait for the EEPROM internal write cycle to complete
+    time.sleep(0.01)
+
+    # Burst read the whole pattern back
+    msgs = [periphery.I2C.Message([0x00, 0x00]), periphery.I2C.Message([0x00] * 32, read=True)]
+    i2c.transfer(i2c_eeprom_addr, msgs)
+    passert("compare readback", msgs[1].data == list(data_pattern))
+
+    # Try bytes read of the whole pattern
+    msgs = [periphery.I2C.Message(b"\x00\x00"), periphery.I2C.Message(b"\x00" * 32, read=True)]
+    i2c.transfer(i2c_eeprom_addr, msgs)
+    passert("bytes read type", isinstance(msgs[1].data, bytes))
+    passert("compare bytes readback", msgs[1].data == bytes(data_pattern))
+
+    # Try bytearray read of the whole pattern
+    msgs = [periphery.I2C.Message(bytearray([0x00, 0x00])), periphery.I2C.Message(bytearray(32), read=True)]
+    i2c.transfer(i2c_eeprom_addr, msgs)
+    passert("bytearray read type", isinstance(msgs[1].data, bytearray))
+    passert("compare bytearray readback", msgs[1].data == data_pattern)
+
+    # Try bytearray read in-place
+    buf = bytearray(16)
+    msgs = [periphery.I2C.Message(bytearray([0x00, 0x10])), periphery.I2C.Message(buf, read=True)]
+    i2c.transfer(i2c_eeprom_addr, msgs, inplace=True)
+    passert("compare in-place readback", msgs[1].data == bytearray(range(0x10, 0x20)))
+    passert("compare in-place readback id", msgs[1].data is buf)
+
+    i2c.close()
+
+    print("Loopback test passed.")
 
 
 def test_interactive():
@@ -78,12 +120,12 @@ if __name__ == "__main__":
         test_arguments()
         sys.exit(0)
 
-    if len(sys.argv) < 2:
-        print("Usage: python -m tests.test_i2c <i2c device>")
+    if len(sys.argv) < 3:
+        print("Usage: python -m tests.test_i2c <I2C device> <I2C EEPROM address>")
         print("")
         print("[1/4] Arguments test: No requirements.")
         print("[2/4] Open/close test: I2C device should be real.")
-        print("[3/4] Loopback test: No test.")
+        print("[3/4] Loopback test: I2C bus should have a 24Cxx style EEPROM connected at the given address.")
         print("[4/4] Interactive test: I2C bus should be observed with an oscilloscope or logic analyzer.")
         print("")
         print("Hint: for Raspberry Pi 3, enable I2C1 with:")
@@ -91,11 +133,12 @@ if __name__ == "__main__":
         print("   $ sudo reboot")
         print("Use pins I2C1 SDA (header pin 2) and I2C1 SCL (header pin 3),")
         print("and run this test with:")
-        print("    python -m tests.test_i2c /dev/i2c-1")
+        print("    python -m tests.test_i2c /dev/i2c-1 0x50")
         print("")
         sys.exit(1)
 
     i2c_devpath = sys.argv[1]
+    i2c_eeprom_addr = int(sys.argv[2], 0)
 
     test_arguments()
     pokay("Arguments test passed.")
