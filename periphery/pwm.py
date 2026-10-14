@@ -86,7 +86,7 @@ class PWM(object):
                     with open(os.path.join(channel_path, "period"), 'w'):
                         break
                 except IOError as e:
-                    if e.errno != errno.EACCES or (e.errno == errno.EACCES and i == PWM._PWM_STAT_RETRIES - 1):
+                    if e.errno != errno.EACCES or i == PWM._PWM_STAT_RETRIES - 1:
                         raise PWMError(e.errno, "Opening PWM period: " + e.strerror)
 
                 time.sleep(PWM._PWM_STAT_DELAY)
