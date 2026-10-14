@@ -11,7 +11,7 @@ class PWMError(IOError):
 class PWM(object):
     # Number of retries to check for successful PWM export on open
     _PWM_STAT_RETRIES = 10
-    # Delay between check for scucessful PWM export on open (100ms)
+    # Delay between check for successful PWM export on open (100ms)
     _PWM_STAT_DELAY = 0.1
 
     def __init__(self, chip, channel):
