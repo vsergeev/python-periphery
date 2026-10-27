@@ -1,8 +1,6 @@
 from types import TracebackType
 from typing import Any
 
-KERNEL_VERSION: tuple[int, int]
-
 class GPIOError(IOError): ...
 
 class EdgeEvent:
