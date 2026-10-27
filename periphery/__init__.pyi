@@ -12,6 +12,7 @@ from periphery.pwm import PWM as PWM, PWMError as PWMError
 from periphery.serial import Serial as Serial, SerialError as SerialError
 from periphery.spi import SPI as SPI, SPIError as SPIError
 
+__version__: str
 version: tuple[int, int, int]
 
 def sleep(seconds: float) -> None: ...
