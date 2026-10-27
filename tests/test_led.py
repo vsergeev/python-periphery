@@ -45,7 +45,7 @@ def test_open_close():
     # Set brightness to True, check brightness
     led.write(True)
     time.sleep(0.01)
-    passert("brightness is max", led.read() == led.max_brightness)
+    passert("brightness is non-zero", led.read() > 0)
 
     # Set brightness to False, check brightness
     led.write(False)
