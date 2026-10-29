@@ -134,7 +134,7 @@ class Cdev2GPIO(GPIO):
 
         Instantiate a GPIO object and open the character device GPIO with the
         specified line and direction at the specified GPIO chip path (e.g.
-        "/dev/gpiochip0"). Defaults properties can be overridden with keyword
+        "/dev/gpiochip0"). Default properties can be overridden with keyword
         arguments.
 
         Args:
