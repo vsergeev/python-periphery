@@ -129,7 +129,10 @@ class Cdev2GPIO(GPIO):
 
     _SUPPORTS_EVENT_CLOCK_HTE = KERNEL_VERSION >= (5, 19)
 
-    def __init__(self, path, line, direction, edge="none", bias="default", drive="default", inverted=False, label=None, event_clock="realtime", debounce_us=0):
+    # ABI v2 is available in Linux 5.10, but the realtime flag is not.
+    _DEFAULT_EVENT_CLOCK = "realtime" if KERNEL_VERSION >= (5, 11) else "monotonic"
+
+    def __init__(self, path, line, direction, edge="none", bias="default", drive="default", inverted=False, label=None, event_clock=_DEFAULT_EVENT_CLOCK, debounce_us=0):
         """**Character device GPIO (ABI version 2)**
 
         Instantiate a GPIO object and open the character device GPIO with the
@@ -151,7 +154,9 @@ class Cdev2GPIO(GPIO):
             inverted (bool): GPIO is inverted (active low).
             label (str, None): GPIO line consumer label.
             event_clock (str): GPIO event clock, can be "realtime",
-                               "monotonic", or "hte".
+                               "monotonic", or "hte". Defaults to
+                               "monotonic" on Linux 5.10 and "realtime"
+                               on newer kernels.
             debounce_us (int): GPIO debounce period in microseconds.
 
         Returns:
